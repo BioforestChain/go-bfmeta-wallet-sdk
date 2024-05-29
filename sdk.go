@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"bufio"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,6 +26,7 @@ import (
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/lastBlockResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/transactionsResp"
 	"io"
+	"log"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -144,9 +146,28 @@ func (sdk *BCFWalletSDK) Close() {
 }
 
 func NewBCFWalletSDK() BCFWalletSDK {
-	//init 结构体
+	var try = 0
+	var repl string
+	for try < 3 {
+		var err error
+		repl, err = exec.LookPath("bfcwallet-node-go-repl")
+		if errors.Is(err, exec.ErrDot) {
+			err = nil
+		}
+		if err != nil {
+			fmt.Println("installing bfcwallet-node-go-repl...")
+			install := exec.Command("npm", "i", "-g", "bfcwallet-node-go-repl")
+			err = install.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
+			continue
+		}
+		break
+	}
+
 	// 启动Node.js进程
-	nodeProcess := newNodeProcess("node", "--no-warnings", "./sdk.js")
+	nodeProcess := newNodeProcess(repl)
 	return BCFWalletSDK{nodeProcess: nodeProcess}
 }
 

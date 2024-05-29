@@ -1,11 +1,8 @@
 {
-  "name": "test-node-go",
-  "version": "1.0.0",
+  "name": "bfcwallet-node-go-repl",
+  "version": "1.0.1",
   "description": "",
-  "main": "demo.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "bin": "sdk.js",
   "keywords": [],
   "author": "",
   "license": "ISC",

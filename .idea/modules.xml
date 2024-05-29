@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://D:/projects/Go/test-goland-node/.idea/test-goland-node.iml" filepath="D:/projects/Go/test-goland-node/.idea/test-goland-node.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/test-node-go.iml" filepath="$PROJECT_DIR$/.idea/test-node-go.iml" />
     </modules>
   </component>
