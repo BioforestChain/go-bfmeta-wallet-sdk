@@ -1,6 +1,7 @@
-package main
+package sdk_test
 
 import (
+	sdk "github.com/BioforestChain/go-bfmeta-wallet-sdk"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
 	accountAssetEntityReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/accountAsset"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/address"
@@ -15,15 +16,15 @@ import (
 )
 
 func TestSdk(t *testing.T) {
-	sdk := NewBCFWalletSDK()
-	wallet := sdk.NewBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
+	sdkClient := sdk.NewBCFWalletSDK()
+	wallet := sdkClient.NewBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
 	//getAddressBalance
 	p := address.Params{
 		"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
 		"XXVXQ",
 		"PMC",
 	}
-	balance := wallet.getAddressBalance(p)
+	balance := wallet.GetAddressBalance(p)
 	log.Printf("balance= %#v\n", balance)
 
 	//GetTransactionsParams
@@ -41,14 +42,14 @@ func TestSdk(t *testing.T) {
 		PageSize:     50,
 		Sort:         1,
 	}
-	transactionsByBrowse, _ := wallet.getTransactionsByBrowser(req)
+	transactionsByBrowse, _ := wallet.GetTransactionsByBrowser(req)
 	log.Printf("transactionsByBrowse= %#v\n", transactionsByBrowse)
 
 	//getAccountInfo
 	accountInfoReq := account.GetAccountInfoParams{
 		"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
 	}
-	accountInfo := wallet.getAccountInfo(accountInfoReq)
+	accountInfo := wallet.GetAccountInfo(accountInfoReq)
 	//accountInfo= accountResp.GetAccountInfoRespResult{Success:true, Result:accountResp.GetAccountInfoResp{Address:"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma", PublicKey:"4bda2c5366b10e709c560e846e4041d355446c910dd6238e418092af5736c227", SecondPublicK
 	//ey:"", IsDelegate:false, IsAcceptVote:false, AccountStatus:0, EquityInfo:accountResp.EquityInfo{Round:0, Equity:"", FixedEquity:""}}}
 	log.Printf("accountInfo= %#v\n", accountInfo)
@@ -57,7 +58,7 @@ func TestSdk(t *testing.T) {
 	accountAssetReq := accountAssetEntityReq.GetAccountAssetParams{
 		"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
 	}
-	accountAsset := wallet.getAccountAsset(accountAssetReq)
+	accountAsset := wallet.GetAccountAsset(accountAssetReq)
 	//accountAssetResp.GetAccountAssetRespResult{Success:true, Result:accountAssetResp.GetAccountAssetResp{Address:"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma", Assets:accountAssetResp.AssetsMap{"XXVXQ":map[string]accountAssetResp.AssetDetail{"PMC":accountAssetResp.AssetDetail{Sour
 	//ceChainMagic:"XXVXQ", AssetType:"PMC", SourceChainName:"paymetachain", AssetNumber:"1789879447994549065"}, "USDM":accountAssetResp.AssetDetail{SourceChainMagic:"XXVXQ", AssetType:"USDM", SourceChainName:"paymetachain", AssetNumber:"4949328785323"}}}, ForgingRewards:"10000541419", VotingRewards:""}}
 	log.Printf("accountAsset= %#v\n", accountAsset)
@@ -67,7 +68,7 @@ func TestSdk(t *testing.T) {
 		2,
 		"USDM",
 	}
-	asset := wallet.getAssets(assetsReq)
+	asset := wallet.GetAssets(assetsReq)
 	//assetsResp.GetAssetsRespResult{Success:false, Result:assetsResp.GetAssetsResp{Page:0, PageSize:0, Total:0, HasMore:false, DataList:[]assetsResp.GetAssetsData(nil)}}
 	log.Printf("asset= %#v\n", asset)
 
@@ -77,7 +78,7 @@ func TestSdk(t *testing.T) {
 			"assetType": "USDM",
 		},
 	}
-	allAccountAsset := wallet.getAllAccountAsset(allAccountAssetReq)
+	allAccountAsset := wallet.GetAllAccountAsset(allAccountAssetReq)
 	//accountAssetResp.GetAllAccountAssetRespResult{Success:true, Result:accountAssetResp.GetAllAccountAssetResp{map[string]map[string]string{"cCET2Sxt2LPDhx44wxJ9uhkpviKNrSacvE":map[string]string{}}...
 	log.Printf("allAccountAsset= %#v\n", allAccountAsset)
 
@@ -85,13 +86,13 @@ func TestSdk(t *testing.T) {
 	assetDetailsReq := assetDetails.Req{
 		"USDM",
 	}
-	assetDetails := wallet.getAssetDetails(assetDetailsReq)
+	assetDetails := wallet.GetAssetDetails(assetDetailsReq)
 	//assetDetailsResp.GetAssetDetailsRespResult{Success:true, Result:assetDetailsResp.GetAssetDetailsResp{AssetInfo:assetDetailsResp.AssetInfo{Asset:assetDetailsResp.Asset{AssetType:"USDM", ApplyAddress:"cKFyTV2yNmCxdsnoLSbT25zKTYVa4kHv1e", GenesisAddress:"cEAXDkaEJgWKMM6
 	//1KYz2dYU1RfuxbB8Ma", SourceChainName:"paymetachain", IssuedAssetPrealnum:"1000000000000000000", RemainAssetPrealnum:"1000000000000000000", FrozenMainAssetPrealnum:"100032000498000", PublishTime:1715325195000, SourceChainMagic:"XXVXQ"}, AddressQty:237}, IconURL:"https://bfm-fonts-cdn.oss-cn-hongkong.a
 	//liyuncs.com/meta-icon/pmc/icon-USDM.png"}}
 	log.Printf("assetDetails= %#v\n", assetDetails)
 
-	lastBlock := wallet.getLastBlock()
+	lastBlock := wallet.GetLastBlock()
 
 	log.Printf("lastBlock= %#v\n", lastBlock)
 
@@ -112,21 +113,21 @@ func TestSdk(t *testing.T) {
 		Sort:         1,
 	}
 
-	transactionsResp := wallet.getTransactions(reqTra)
+	transactionsResp := wallet.GetTransactions(reqTra)
 	log.Printf("transactionsResp= %#v\n", transactionsResp)
 
 	//generateSecret
 	reqGenSecret := generateSecretReq.GenerateSecretParams{
 		Lang: "en",
 	}
-	secretResp := wallet.generateSecret(reqGenSecret)
+	secretResp := wallet.GenerateSecret(reqGenSecret)
 	log.Printf("secretResp= %#v\n", secretResp)
 
 	//createAccount
 	reqCreateAccount := createAccountReq.CreateAccountReq{
 		Secret: "xxxxxxxxxxxxxxxxxxxxxxx",
 	}
-	createAccountResp := wallet.createAccount(reqCreateAccount)
+	createAccountResp := wallet.CreateAccount(reqCreateAccount)
 	log.Printf("createAccountResp= %#v\n", createAccountResp)
 
 	//broadcastCompleteTransaction
@@ -134,8 +135,8 @@ func TestSdk(t *testing.T) {
 		"key":  123,
 		"key1": []string{"item1", "item2"},
 	}
-	bCTResp := wallet.broadcastCompleteTransaction(reqBroadcastCompleteTransaction)
+	bCTResp := wallet.BroadcastCompleteTransaction(reqBroadcastCompleteTransaction)
 	log.Printf("bCTResp= %#v\n", bCTResp)
 
-	defer sdk.Close()
+	defer sdkClient.Close()
 }
