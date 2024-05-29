@@ -5,6 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"os/exec"
+	"strconv"
+	"strings"
+	"sync"
+
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/accountAsset"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/address"
@@ -24,12 +31,6 @@ import (
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/generateSecretResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/lastBlockResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/transactionsResp"
-	"io"
-	"log"
-	"os/exec"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 type Result struct {
@@ -206,14 +207,14 @@ func (sdk BCFWalletSDK) NewBCFWallet(ip string, port int, browserPath string) *B
 		const bfcwalletMap = (globalThis.bfcwalletMap??=new Map());
 		globalThis.bfcwalletIdAcc ??= 0
 		const id = globalThis.bfcwalletIdAcc++
-		const bfcwallet = new require('@bfmeta/wallet-bcf').BCFWalletFactory({
+		const bfcwallet = walletBcf.BCFWalletFactory({
 			enable: true,
             host: [{ ip: "`+ip+`", port: `+strconv.Itoa(port)+` }],
             browserPath: "`+browserPath+`",
         });
 		bfcwalletMap.set(id, bfcwallet)
 		return id;
-		}`)
+	}`)
 	return &BCFWallet{nodeProcess: sdk.nodeProcess, walletId: strconv.Itoa(bfcWalletId)}
 }
 
