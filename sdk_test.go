@@ -11,9 +11,10 @@ import (
 	"bfmeta-wallet-bcf/entity/req/generateSecretReq"
 	"bfmeta-wallet-bcf/entity/req/transactions"
 	"log"
+	"testing"
 )
 
-func main() {
+func TestSdk(t *testing.T) {
 	sdk := newBCFWalletSDK()
 	wallet := sdk.newBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
 	//getAddressBalance
