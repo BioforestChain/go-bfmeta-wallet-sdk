@@ -1,15 +1,15 @@
 package main
 
 import (
-	"bfmeta-wallet-bcf/entity/req/account"
-	accountAssetEntityReq "bfmeta-wallet-bcf/entity/req/accountAsset"
-	"bfmeta-wallet-bcf/entity/req/address"
-	"bfmeta-wallet-bcf/entity/req/assetDetails"
-	"bfmeta-wallet-bcf/entity/req/assets"
-	"bfmeta-wallet-bcf/entity/req/broadcast"
-	createAccountReq "bfmeta-wallet-bcf/entity/req/createAccount"
-	"bfmeta-wallet-bcf/entity/req/generateSecretReq"
-	"bfmeta-wallet-bcf/entity/req/transactions"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
+	accountAssetEntityReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/accountAsset"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/address"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assetDetails"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assets"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcast"
+	createAccountReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/createAccount"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/generateSecretReq"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/transactions"
 	"log"
 	"testing"
 )
