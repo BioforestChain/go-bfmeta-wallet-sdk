@@ -3,6 +3,7 @@ package sdk_test
 import (
 	sdk "github.com/BioforestChain/go-bfmeta-wallet-sdk"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
+	accountAssetEntityReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/accountAsset"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/address"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assetDetails"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assets"
