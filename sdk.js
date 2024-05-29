@@ -1,4 +1,4 @@
-#!/usr/bin/node
+#!/usr/bin/env node
 async function returnToGo(req_id, handler) {
     console.log("node env ready", process.versions.node)
     try {

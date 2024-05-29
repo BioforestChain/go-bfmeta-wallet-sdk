@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"bufio"
-	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
