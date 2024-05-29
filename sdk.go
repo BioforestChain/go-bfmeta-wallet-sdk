@@ -1,6 +1,25 @@
 package main
 
 import (
+	"bfmeta-wallet-bcf/entity/req/account"
+	"bfmeta-wallet-bcf/entity/req/accountAsset"
+	"bfmeta-wallet-bcf/entity/req/address"
+	"bfmeta-wallet-bcf/entity/req/assetDetails"
+	"bfmeta-wallet-bcf/entity/req/assets"
+	"bfmeta-wallet-bcf/entity/req/broadcast"
+	createAccountReq "bfmeta-wallet-bcf/entity/req/createAccount"
+	"bfmeta-wallet-bcf/entity/req/createTransferAsset"
+	"bfmeta-wallet-bcf/entity/req/generateSecretReq"
+	"bfmeta-wallet-bcf/entity/req/transactions"
+	"bfmeta-wallet-bcf/entity/resp/accountAssetResp"
+	"bfmeta-wallet-bcf/entity/resp/accountResp"
+	"bfmeta-wallet-bcf/entity/resp/assetDetailsResp"
+	"bfmeta-wallet-bcf/entity/resp/assetsResp"
+	"bfmeta-wallet-bcf/entity/resp/broadcastResp"
+	"bfmeta-wallet-bcf/entity/resp/createAccountResp"
+	"bfmeta-wallet-bcf/entity/resp/generateSecretResp"
+	"bfmeta-wallet-bcf/entity/resp/lastBlockResp"
+	"bfmeta-wallet-bcf/entity/resp/transactionsResp"
 	"bufio"
 	"encoding/json"
 	"errors"
@@ -183,13 +202,134 @@ type BalanceResult struct {
 	Result  struct {
 		Amount string `json:"amount"`
 	} `json:"result"`
+	//Result interface{} `json:"result"`
 }
 
-func (wallet *BCFWallet) getAddressBalance(address string, magic string, assetType string) BalanceResult {
-	//balance, _ := nodeExec[string](`
-	balance, _ := nodeExec[BalanceResult](wallet.nodeProcess, `
-		globalThis.bfcwalletMap.get(`+wallet.walletId+`).getAddressBalance("`+address+`", "`+magic+`", "`+assetType+`")
-	`)
+// func (wallet *BCFWallet) getAddressBalance(address, magic, assetType string) (res BalanceResult) {
+func (wallet *BCFWallet) getAddressBalance(req address.Params) (res BalanceResult) {
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getAddressBalance(%q, %q, %q)`, wallet.walletId, req.Address, req.Magic, req.AssetType)
+	res, _ = nodeExec[BalanceResult](wallet.nodeProcess, script)
+	return res
+}
 
-	return balance
+/// baseApi
+
+func (wallet *BCFWallet) getTransactionsByBrowser(req transactions.GetTransactionsParams) (resp transactionsResp.GetTransactionsByBrowserResult, err error) {
+	reqData, err := json.Marshal(req)
+	if err != nil {
+		return resp, fmt.Errorf("failed to marshal request: %v", err)
+	}
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getTransactionsByBrowser(%v)`, wallet.walletId, string(reqData))
+	resp, _ = nodeExec[transactionsResp.GetTransactionsByBrowserResult](wallet.nodeProcess, script)
+	return resp, nil
+}
+
+func (wallet *BCFWallet) getAccountInfo(req account.GetAccountInfoParams) (resp accountResp.GetAccountInfoRespResult) {
+	resp, _ = nodeExec[accountResp.GetAccountInfoRespResult](wallet.nodeProcess, `
+		globalThis.bfcwalletMap.get(`+wallet.walletId+`).getAccountInfo("`+req.Address+`")
+	`)
+	return resp
+}
+
+func (wallet *BCFWallet) getAccountAsset(req accountAsset.GetAccountAssetParams) (resp accountAssetResp.GetAccountAssetRespResult) {
+	resp, _ = nodeExec[accountAssetResp.GetAccountAssetRespResult](wallet.nodeProcess, `
+		globalThis.bfcwalletMap.get(`+wallet.walletId+`).getAccountAsset("`+req.Address+`")
+	`)
+	return resp
+}
+
+func (wallet *BCFWallet) getAssets(req assets.PaginationOptions) (resp assetsResp.GetAssetsRespResult) {
+	script := fmt.Sprintf(`
+        globalThis.bfcwalletMap.get(%q).getAssets(%d, %d, %q)
+    `, wallet.walletId, req.Page, req.PageSize, req.AssetType)
+	resp, _ = nodeExec[assetsResp.GetAssetsRespResult](wallet.nodeProcess, script)
+	return resp
+}
+
+func (wallet *BCFWallet) getAssetDetails(req assetDetails.Req) (resp assetDetailsResp.GetAssetDetailsRespResult) {
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getAssetDetails(%q)`, wallet.walletId, req.AssetType)
+	resp, _ = nodeExec[assetDetailsResp.GetAssetDetailsRespResult](wallet.nodeProcess, script)
+	return
+}
+func (wallet *BCFWallet) getAllAccountAsset(req accountAsset.GetAllAccountAssetReq) (resp accountAssetResp.GetAllAccountAssetRespResult) {
+	jsonData, err := json.Marshal(req)
+	if err != nil {
+		fmt.Println("Error marshalling to JSON:", err)
+		return
+	}
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getAllAccountAsset(%v)`, wallet.walletId, string(jsonData))
+	resp, _ = nodeExec[accountAssetResp.GetAllAccountAssetRespResult](wallet.nodeProcess, script)
+	return
+}
+
+// / baseApis2
+// todo
+//func getBlock(req block.GetBlockParams) (resp blockResp.GetAllAccountAssetResp) {
+//	return
+//}
+
+func (wallet *BCFWallet) getLastBlock() (resp lastBlockResp.GetLastBlockInfoRespResult) {
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getLastBlock()`, wallet.walletId)
+	resp, _ = nodeExec[lastBlockResp.GetLastBlockInfoRespResult](wallet.nodeProcess, script)
+	return
+}
+
+func (wallet *BCFWallet) getTransactions(req transactions.GetTransactionsParams) (resp transactionsResp.GetTransactionsResult) {
+	reqData, err := json.Marshal(req)
+	if err != nil {
+		fmt.Println("Error marshalling to JSON:", err)
+		return
+	}
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getTransactions(%v)`, wallet.walletId, string(reqData))
+	resp, _ = nodeExec[transactionsResp.GetTransactionsResult](wallet.nodeProcess, script)
+	return resp
+}
+
+func (wallet *BCFWallet) generateSecret(req generateSecretReq.GenerateSecretParams) (resp generateSecretResp.GenerateSecretRespResult) {
+	//reqData, err := json.Marshal(req)
+	//if err != nil {
+	//	fmt.Println("Error marshalling to JSON:", err)
+	//	return
+	//}
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).generateSecret(%q)`, wallet.walletId, req.Lang)
+	resp, _ = nodeExec[generateSecretResp.GenerateSecretRespResult](wallet.nodeProcess, script)
+	return
+}
+
+func (wallet *BCFWallet) createAccount(req createAccountReq.CreateAccountReq) (resp createAccountResp.CreateAccountRespResult) {
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).createAccount(%q)`, wallet.walletId, req.Secret)
+	resp, _ = nodeExec[createAccountResp.CreateAccountRespResult](wallet.nodeProcess, script)
+	return
+}
+
+/// transactionApis
+
+func (wallet *BCFWallet) broadcastCompleteTransaction(req broadcast.Params) (resp broadcastResp.BroadcastRespResult[any]) {
+	reqData, err := json.Marshal(req)
+	if err != nil {
+		fmt.Println("Error marshalling to JSON:", err)
+		return
+	}
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).broadcastCompleteTransaction(%q)`, wallet.walletId, string(reqData))
+	resp, _ = nodeExec[broadcastResp.BroadcastRespResult[any]](wallet.nodeProcess, script)
+	return
+}
+func (wallet *BCFWallet) createTransferAsset(req createTransferAsset.TransferAssetTransactionParams) (resp interface{}) {
+	//reqData, err := json.Marshal(req)
+	//if err != nil {
+	//	fmt.Println("Error marshalling to JSON:", err)
+	//	return
+	//}
+	//script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).createTransferAsset(%q)`, wallet.walletId, string(reqData))
+	//resp, _ = nodeExec[createTransferAssetResp.CreateResult](wallet.nodeProcess, script)
+	//if resp.Success {
+	//	return resp.SuccessCreateResult
+	//}
+	return
+}
+func (wallet *BCFWallet) packageTransferAsset(req createAccountReq.CreateAccountReq) (resp createAccountResp.CreateAccountResp) {
+	return
+}
+func (wallet *BCFWallet) broadcastTransferAsset(req createAccountReq.CreateAccountReq) (resp createAccountResp.CreateAccountResp) {
+	return
 }
