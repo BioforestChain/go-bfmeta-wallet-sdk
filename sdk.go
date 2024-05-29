@@ -5,6 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcastTra"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/pkgTranscaction"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/broadcastResultResp"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/createTransferAssetResp"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/pkgTranscactionResp"
 	"io"
 	"log"
 	"os/exec"
@@ -47,7 +52,7 @@ type NodeProcess struct {
 	//NodeExec    func()
 }
 
-func newNodeProcess(cmd string, args ...string) *NodeProcess {
+func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 	command := exec.Command(cmd, args...)
 
 	stdin, err := command.StdinPipe()
@@ -94,18 +99,21 @@ func newNodeProcess(cmd string, args ...string) *NodeProcess {
 				fmt.Println(name+" read line error:", err)
 				continue
 			}
-			//fmt.Printf("line: %v\n", line)
+			if debug {
+				fmt.Printf("line: %v\n", line)
+			}
 			parts := strings.SplitN(line, "Result ", 2)
 			if len(parts) == 2 {
 				//fmt.Printf("node: %v\n", parts[1])
 				// 解析行并提取req_id和json_result
-				parts := strings.SplitN(parts[1], " ", 3)
-				if len(parts) < 2 {
+				result := parts[1]
+				idIndex := strings.Index(result, " ")
+				if idIndex == -1 {
 					fmt.Println(name+" Invalid line format:", line)
 					continue
 				}
-				reqIDStr := parts[0]
-				resultData := parts[1]
+				reqIDStr := result[0:idIndex]
+				resultData := result[idIndex+1:]
 
 				// 将req_id转换为整数
 				reqID, err := strconv.Atoi(reqIDStr)
@@ -138,6 +146,7 @@ func (p *NodeProcess) CloseProcess() error {
 }
 
 type BCFWalletSDK struct {
+	debug       bool
 	nodeProcess *NodeProcess
 }
 
@@ -145,6 +154,11 @@ func (sdk *BCFWalletSDK) Close() {
 	sdk.nodeProcess.CloseProcess()
 }
 
+func NewLocalBCFWalletSDK(debug bool) BCFWalletSDK {
+	// 启动Node.js进程
+	nodeProcess := newNodeProcess("node", []string{"--no-warnings", "./sdk.js"}, debug)
+	return BCFWalletSDK{nodeProcess: nodeProcess}
+}
 func NewBCFWalletSDK() BCFWalletSDK {
 	var try = 0
 	var repl string
@@ -167,13 +181,12 @@ func NewBCFWalletSDK() BCFWalletSDK {
 	}
 
 	// 启动Node.js进程
-	nodeProcess := newNodeProcess(repl)
+	nodeProcess := newNodeProcess(repl, []string{}, false)
 	return BCFWalletSDK{nodeProcess: nodeProcess}
 }
 
 var reqIdAcc = 0
 
-// func NodeExec[T any](jsCode string) (T, error) {
 func nodeExec[T any](nodeProcess *NodeProcess, jsCode string) (T, error) {
 	var res T
 	reqIdAcc += 1
@@ -195,6 +208,38 @@ func nodeExec[T any](nodeProcess *NodeProcess, jsCode string) (T, error) {
 		return res, errors.New(result.Message)
 	}
 }
+
+//func nodeExecCommonResult[T any](nodeProcess *NodeProcess, jsCode string) (T, error) {
+//	var res T
+//	reqIdAcc += 1
+//	req_id := reqIdAcc
+//	channel := make(chan Result)
+//	nodeProcess.ChannelMap.Store(req_id, channel)
+//
+//	var evalCode = fmt.Sprintf("await returnToGo(%d, async()=>%v)\r\n\n", req_id, jsCode)
+//	_, err := nodeProcess.Stdin.Write([]byte(evalCode))
+//	if err != nil {
+//		return res, err
+//	}
+//
+//	result := <-channel
+//	if result.Code == 1 {
+//		var commonResult resp.CommonResult
+//		msgBytes := []byte(result.Message)
+//		err := json.Unmarshal(msgBytes, &commonResult)
+//		if err != nil {
+//			return res, err
+//		}
+//		if commonResult.Success {
+//			err := json.Unmarshal(msgBytes, &res)
+//		} else {
+//
+//		}
+//		return res, err
+//	} else {
+//		return res, errors.New(result.Message)
+//	}
+//}
 
 type BCFWallet struct {
 	nodeProcess *NodeProcess
@@ -285,10 +330,12 @@ func (wallet *BCFWallet) GetAllAccountAsset(req accountAsset.GetAllAccountAssetR
 
 // / baseApis2
 // todo
-//func getBlock(req block.GetBlockParams) (resp blockResp.GetAllAccountAssetResp) {
-//	return
-//}
-
+//
+//	func getBlock(req block.GetBlockParams) (resp blockResp.GetAllAccountAssetResp) {
+//		return
+//	}
+//
+// todo resp 同上
 func (wallet *BCFWallet) GetLastBlock() (resp lastBlockResp.GetLastBlockInfoRespResult) {
 	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getLastBlock()`, wallet.walletId)
 	resp, _ = nodeExec[lastBlockResp.GetLastBlockInfoRespResult](wallet.nodeProcess, script)
@@ -335,22 +382,36 @@ func (wallet *BCFWallet) BroadcastCompleteTransaction(req broadcast.Params) (res
 	resp, _ = nodeExec[broadcastResp.BroadcastRespResult[any]](wallet.nodeProcess, script)
 	return
 }
-func (wallet *BCFWallet) createTransferAsset(req createTransferAsset.TransferAssetTransactionParams) (resp interface{}) {
-	//reqData, err := json.Marshal(req)
-	//if err != nil {
-	//	fmt.Println("Error marshalling to JSON:", err)
-	//	return
-	//}
-	//script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).createTransferAsset(%q)`, wallet.walletId, string(reqData))
-	//resp, _ = nodeExec[createTransferAssetResp.CreateResult](wallet.nodeProcess, script)
-	//if resp.Success {
-	//	return resp.SuccessCreateResult
-	//}
-	return
+func (wallet *BCFWallet) CreateTransferAsset(req createTransferAsset.TransferAssetTransactionParams) (result createTransferAssetResp.CreateResult, err error) {
+	reqData, err := json.Marshal(req)
+	if err != nil {
+		fmt.Println("Error marshalling to JSON:", err)
+		return result, err
+	}
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.transaction
+.createTransferAsset(%q)`, wallet.walletId, string(reqData))
+	result, err = nodeExec[createTransferAssetResp.CreateResult](wallet.nodeProcess, script)
+	return result, err
 }
-func (wallet *BCFWallet) packageTransferAsset(req createAccountReq.CreateAccountReq) (resp createAccountResp.CreateAccountResp) {
-	return
+func (wallet *BCFWallet) PackageTransferAsset(req pkgTranscaction.PackageTransacationParams) (resp pkgTranscactionResp.PackageResult, err error) {
+	reqData, err := json.Marshal(req)
+	if err != nil {
+		fmt.Println("Error marshalling to JSON:", err)
+		return resp, err
+	}
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.transaction
+.packageTransferAsset(%q)`, wallet.walletId, string(reqData))
+	resp, err = nodeExec[pkgTranscactionResp.PackageResult](wallet.nodeProcess, script)
+	return resp, err
 }
-func (wallet *BCFWallet) broadcastTransferAsset(req createAccountReq.CreateAccountReq) (resp createAccountResp.CreateAccountResp) {
-	return
+func (wallet *BCFWallet) BroadcastTransferAsset(req broadcastTra.BroadcastTransactionParams) (resp broadcastResultResp.BroadcastResult, err error) {
+	reqData, err := json.Marshal(req)
+	if err != nil {
+		fmt.Println("Error marshalling to JSON:", err)
+		return resp, err
+	}
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.transaction
+.broadcastTransferAsset(%q)`, wallet.walletId, string(reqData))
+	resp, err = nodeExec[broadcastResultResp.BroadcastResult](wallet.nodeProcess, script)
+	return resp, err
 }

@@ -2,26 +2,21 @@ package createTransferAssetResp
 
 // SuccessCreateResult 表示成功的创建结果
 type SuccessCreateResult struct {
-	Success bool `json:"success"`
-	Result  struct {
-		Buffer string `json:"buffer"`
-	} `json:"result"`
+	Buffer string `json:"buffer"`
 }
 
 // FailureCreateResult 表示失败的创建结果
 type FailureCreateResult struct {
-	Success bool `json:"success"`
-	Error   struct {
-		Code    string `json:"code"`
-		Message string `json:"message"`
-	} `json:"error"`
-	MinFee string `json:"minFee"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }
 
-// CreateResult 是 SuccessCreateResult 或 FailureCreateResult 的联合类型
+// // CreateResult 是 SuccessCreateResult 或 FailureCreateResult 的联合类型
 type CreateResult struct {
-	SuccessCreateResult
-	FailureCreateResult
+	Success bool                `json:"success"`
+	Result  SuccessCreateResult `json:"result,omitempty"`
+	Error   FailureCreateResult `json:"error,omitempty"`
+	MinFee  string              `json:"minFee,omitempty"`
 }
 
 // ApiFailureReturn 表示 API 调用失败的返回

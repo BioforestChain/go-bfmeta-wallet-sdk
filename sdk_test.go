@@ -8,16 +8,20 @@ import (
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assetDetails"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assets"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcast"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcastTra"
 	createAccountReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/createAccount"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/createTransferAsset"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/generateSecretReq"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/pkgTranscaction"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/transactions"
 	"log"
 	"testing"
 )
 
+var sdkClient = sdk.NewLocalBCFWalletSDK(true)
+var wallet = sdkClient.NewBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
+
 func TestSdk(t *testing.T) {
-	sdkClient := sdk.NewBCFWalletSDK()
-	wallet := sdkClient.NewBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
 	//getAddressBalance
 	p := address.Params{
 		"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
@@ -130,6 +134,10 @@ func TestSdk(t *testing.T) {
 	createAccountResp := wallet.CreateAccount(reqCreateAccount)
 	log.Printf("createAccountResp= %#v\n", createAccountResp)
 
+	defer sdkClient.Close()
+}
+
+func TestBroadcastCompleteTransaction(t *testing.T) {
 	//broadcastCompleteTransaction
 	reqBroadcastCompleteTransaction := broadcast.Params{
 		"key":  123,
@@ -137,6 +145,56 @@ func TestSdk(t *testing.T) {
 	}
 	bCTResp := wallet.BroadcastCompleteTransaction(reqBroadcastCompleteTransaction)
 	log.Printf("bCTResp= %#v\n", bCTResp)
+}
 
-	defer sdkClient.Close()
+func TestCreateTransferAsset(t *testing.T) {
+	reqCreateTransferAsset := createTransferAsset.TransferAssetTransactionParams{
+		TransactionCommonParamsWithRecipientId: createTransferAsset.TransactionCommonParamsWithRecipientId{
+			TransactionCommonParams: createTransferAsset.TransactionCommonParams{
+				PublicKey:        "examplePublicKey",
+				Fee:              "0.1",
+				ApplyBlockHeight: 100,
+				Remark: map[string]string{
+					"note": "example transaction",
+				},
+				BinaryInfos: []createTransferAsset.KVStorageInfo{
+					{
+						Key: "exampleKey",
+						FileInfo: createTransferAsset.FileInfo{
+							Name: "exampleFile",
+							Size: 1234,
+						},
+					},
+				},
+				Timestamp: 1622732931,
+			},
+			RecipientId: "exampleRecipientId",
+		},
+		SourceChainMagic: "exampleSourceChainMagic",
+		SourceChainName:  "exampleSourceChainName",
+		AssetType:        "exampleAssetType",
+		Amount:           "10.0",
+	}
+	createTransferAssetResp, _ := wallet.CreateTransferAsset(reqCreateTransferAsset)
+	log.Printf("createTransferAssetResp= %#v\n", createTransferAssetResp)
+}
+
+func TestPackageTransferAsset(t *testing.T) {
+	req := pkgTranscaction.PackageTransacationParams{
+		Signature: "exampleSignature",
+		Buffer:    "exampleBuffer",
+	}
+	pkgTransferAssetResp, _ := wallet.PackageTransferAsset(req)
+	log.Printf("pkgTransferAssetResp= %#v\n", pkgTransferAssetResp)
+}
+
+func TestBroadcastTransferAsset(t *testing.T) {
+	req := broadcastTra.BroadcastTransactionParams{
+		Signature:     "exampleSignature",
+		SignSignature: "exampleSignSignature",
+		Buffer:        "exampleBuffer",
+		IsOnChain:     true,
+	}
+	broadcastTransferAsset, _ := wallet.BroadcastTransferAsset(req)
+	log.Printf("broadcastTransferAsset= %#v\n", broadcastTransferAsset)
 }
