@@ -15,8 +15,8 @@ import (
 )
 
 func TestSdk(t *testing.T) {
-	sdk := newBCFWalletSDK()
-	wallet := sdk.newBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
+	sdk := NewBCFWalletSDK()
+	wallet := sdk.NewBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
 	//getAddressBalance
 	p := address.Params{
 		"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",

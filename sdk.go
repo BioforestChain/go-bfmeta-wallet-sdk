@@ -143,7 +143,7 @@ func (sdk *BCFWalletSDK) Close() {
 	sdk.nodeProcess.CloseProcess()
 }
 
-func newBCFWalletSDK() BCFWalletSDK {
+func NewBCFWalletSDK() BCFWalletSDK {
 	//init 结构体
 	// 启动Node.js进程
 	nodeProcess := newNodeProcess("node", "--no-warnings", "./sdk.js")
@@ -180,7 +180,7 @@ type BCFWallet struct {
 	walletId    string
 }
 
-func (sdk BCFWalletSDK) newBCFWallet(ip string, port int, browserPath string) *BCFWallet {
+func (sdk BCFWalletSDK) NewBCFWallet(ip string, port int, browserPath string) *BCFWallet {
 	//TODO
 	bfcWalletId, _ := nodeExec[int](sdk.nodeProcess, `{
 		const bfcwalletMap = (globalThis.bfcwalletMap??=new Map());
