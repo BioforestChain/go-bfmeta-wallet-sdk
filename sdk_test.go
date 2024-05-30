@@ -133,7 +133,7 @@ func TestSdk(t *testing.T) {
 	createAccountResp := wallet.CreateAccount(reqCreateAccount)
 	log.Printf("createAccountResp= %#v\n", createAccountResp)
 
-	defer sdkClient.Close()
+	//defer sdkClient.Close()
 }
 
 func TestGetBlock(t *testing.T) {
