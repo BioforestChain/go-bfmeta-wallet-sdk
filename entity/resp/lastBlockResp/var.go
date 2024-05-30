@@ -1,5 +1,13 @@
 package lastBlockResp
 
+type GetLastBlockResultResp struct {
+	Success bool               `json:"success"`
+	Result  GetLastBlockResult `json:"result"`
+}
+
+// GetLastBlockResult 表示获取最后一个区块结果的结构体
+type GetLastBlockResult LastBlockInfo[any]
+
 // LastBlockInfo 包含最新区块信息的结构体
 type LastBlockInfo[T any] struct {
 	Version                  int                      `json:"version"`
@@ -24,9 +32,6 @@ type GetLastBlockInfoRespResult struct {
 	Success bool               `json:"success"`
 	Result  LastBlockInfo[any] `json:"result"`
 }
-
-// GetLastBlockResult 表示获取最后一个区块结果的结构体
-type GetLastBlockResult LastBlockInfo[any]
 
 // BlockTransactionInfoJSON 包含区块交易信息的结构体
 type BlockTransactionInfoJSON struct {

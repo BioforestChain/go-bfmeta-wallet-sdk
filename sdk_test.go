@@ -7,6 +7,7 @@ import (
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/address"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assetDetails"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assets"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/block"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcast"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcastTra"
 	createAccountReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/createAccount"
@@ -19,6 +20,8 @@ import (
 )
 
 var sdkClient = sdk.NewLocalBCFWalletSDK(true)
+
+// var sdkClient = sdk.NewBCFWalletSDK()
 var wallet = sdkClient.NewBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
 
 func TestSdk(t *testing.T) {
@@ -96,10 +99,6 @@ func TestSdk(t *testing.T) {
 	//liyuncs.com/meta-icon/pmc/icon-USDM.png"}}
 	log.Printf("assetDetails= %#v\n", assetDetails)
 
-	lastBlock := wallet.GetLastBlock()
-
-	log.Printf("lastBlock= %#v\n", lastBlock)
-
 	//GetTransactionsParams
 	//todo 是否需要测试 Signature
 	reqTra := transactions.GetTransactionsParams{
@@ -137,11 +136,28 @@ func TestSdk(t *testing.T) {
 	defer sdkClient.Close()
 }
 
+func TestGetBlock(t *testing.T) {
+	p := block.GetBlockParams{
+		//test 不传
+		//Signature: "abc123",
+		Height:   10,
+		Page:     1,
+		PageSize: 20,
+	}
+	block := wallet.GetBlock(p)
+	log.Printf("block= %#v\n", block)
+}
+
+func TestGetLastBlock(t *testing.T) {
+	lastBlock := wallet.GetLastBlock()
+	log.Printf("lastBlock= %#v\n", lastBlock)
+}
+
 func TestBroadcastCompleteTransaction(t *testing.T) {
 	//broadcastCompleteTransaction
 	reqBroadcastCompleteTransaction := broadcast.Params{
-		"key":  123,
-		"key1": []string{"item1", "item2"},
+		"key": 123,
+		//"key1": []string{"item1", "item2"},
 	}
 	bCTResp := wallet.BroadcastCompleteTransaction(reqBroadcastCompleteTransaction)
 	log.Printf("bCTResp= %#v\n", bCTResp)

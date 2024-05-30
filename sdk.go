@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/block"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcastTra"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/pkgTranscaction"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/blockResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/broadcastResultResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/createTransferAssetResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/pkgTranscactionResp"
@@ -330,15 +332,28 @@ func (wallet *BCFWallet) GetAllAccountAsset(req accountAsset.GetAllAccountAssetR
 
 // / baseApis2
 // todo
-//
-//	func getBlock(req block.GetBlockParams) (resp blockResp.GetAllAccountAssetResp) {
-//		return
-//	}
-//
+
+func (wallet *BCFWallet) GetBlock(req block.GetBlockParams) (resp blockResp.GetBlockResultResp) {
+	jsonData, err := json.Marshal(req)
+	if err != nil {
+		fmt.Println("Error marshalling to JSON:", err)
+		return
+	}
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.basic.getBlock(%v)`, wallet.walletId, string(jsonData))
+	resp, _ = nodeExec[blockResp.GetBlockResultResp](wallet.nodeProcess, script)
+	return
+}
+
 // todo resp 同上
-func (wallet *BCFWallet) GetLastBlock() (resp lastBlockResp.GetLastBlockInfoRespResult) {
-	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getLastBlock()`, wallet.walletId)
-	resp, _ = nodeExec[lastBlockResp.GetLastBlockInfoRespResult](wallet.nodeProcess, script)
+//func (wallet *BCFWallet) GetLastBlock() (resp lastBlockResp.GetBlockResult) {
+//	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getLastBlock()`, wallet.walletId)
+//	resp, _ = nodeExec[lastBlockResp.GetBlockResult](wallet.nodeProcess, script)
+//	return
+//}
+
+func (wallet *BCFWallet) GetLastBlock() (resp lastBlockResp.GetLastBlockResultResp) {
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.basic.getLastBlock()`, wallet.walletId)
+	resp, _ = nodeExec[lastBlockResp.GetLastBlockResultResp](wallet.nodeProcess, script)
 	return
 }
 
