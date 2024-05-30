@@ -84,6 +84,16 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 		fmt.Println("Failed to start process:", err)
 		panic(err)
 	}
+
+	defer func() {
+		nodeProcess.Stdin.Close()
+		if err := nodeProcess.Cmd.Wait(); err != nil {
+			fmt.Println("Error waiting for command:", err)
+		} else {
+			fmt.Println("Command finished successfully")
+		}
+	}()
+
 	//if err := cmd.Start(); err != nil {
 	//	fmt.Println("Error starting command:", err)
 	//	return
@@ -124,7 +134,6 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 				}
 
 				// 从map中获取并移除通道
-				//if ch, ok := channelMap.LoadAndDelete(reqID); ok {
 				if ch, ok := nodeProcess.ChannelMap.LoadAndDelete(reqID); ok {
 					channel := ch.(chan Result)
 					// 向通道发送结果
@@ -143,7 +152,8 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 }
 func (p *NodeProcess) CloseProcess() error {
 	p.Stdin.Close()
-	return p.Cmd.Wait()
+	//p.Cmd.Wait()
+	return p.Cmd.Cancel()
 }
 
 type BCFWalletSDK struct {

@@ -43,7 +43,7 @@ func TestSdk(t *testing.T) {
 	//ey:"", IsDelegate:false, IsAcceptVote:false, AccountStatus:0, EquityInfo:accountResp.EquityInfo{Round:0, Equity:"", FixedEquity:""}}}
 	log.Printf("accountInfo= %#v\n", accountInfo)
 
-	//defer sdkClient.Close()
+	defer sdkClient.Close()
 }
 
 func TestSdkAsset(t *testing.T) {
