@@ -153,11 +153,40 @@ func TestGetLastBlock(t *testing.T) {
 	log.Printf("lastBlock= %#v\n", lastBlock)
 }
 
+// todo test params
+// https://qatracker.pmchainbox.info/#/info/transaction-data/2d0cea07ab73be6bdab258f12e7e0aa22776a8b9dd7b130f33fdd8fce6534cb0e29bc8d4983d3564178ae4189eedba80a864bda1a4ceb8b197e530ef1774ea07
+// params transaction 这个结构
 func TestBroadcastCompleteTransaction(t *testing.T) {
 	//broadcastCompleteTransaction
 	reqBroadcastCompleteTransaction := broadcast.Params{
-		"key": 123,
-		//"key1": []string{"item1", "item2"},
+		"version":              1,
+		"type":                 "PMC-PAYMETACHAIN-AST-02",
+		"senderId":             "c6C9ycTXrPBu8wXAGhUJHau678YyQwB2Mn",
+		"senderPublicKey":      "0d3c8003248cc4c71493dd67c0c433e75b7a191758df94fb0be5db2c6a94fecd",
+		"fee":                  "100000",
+		"timestamp":            31839601,
+		"applyBlockHeight":     114208,
+		"effectiveBlockHeight": 114258,
+		"signature":            "2d0cea07ab73be6bdab258f12e7e0aa22776a8b9dd7b130f33fdd8fce6534cb0e29bc8d4983d3564178ae4189eedba80a864bda1a4ceb8b197e530ef1774ea07",
+		"asset": map[string]interface{}{
+			"transferAsset": map[string]interface{}{
+				"sourceChainName":  "paymetachain",
+				"sourceChainMagic": "XXVXQ",
+				"assetType":        "PMC",
+				"amount":           "185184",
+			},
+		},
+		"rangeType": 0,
+		"range":     []string{},
+		"fromMagic": "",
+		"toMagic":   "",
+		"remark": map[string]string{
+			"orderId": "110b45fafcb84cb7a1de7eef5a957855",
+		},
+		"recipientId":  "cFqv1tiifgYE6xbhZp43XxbZVJp363BWXt",
+		"storageKey":   "assetType",
+		"storageValue": "PMC",
+		//"key1":       []string{"item1", "item2"},
 	}
 	bCTResp := wallet.BroadcastCompleteTransaction(reqBroadcastCompleteTransaction)
 	log.Printf("bCTResp= %#v\n", bCTResp)

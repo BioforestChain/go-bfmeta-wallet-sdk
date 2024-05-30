@@ -393,7 +393,7 @@ func (wallet *BCFWallet) BroadcastCompleteTransaction(req broadcast.Params) (res
 		fmt.Println("Error marshalling to JSON:", err)
 		return
 	}
-	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).broadcastCompleteTransaction(%q)`, wallet.walletId, string(reqData))
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.transaction.broadcastCompleteTransaction(%q)`, wallet.walletId, string(reqData))
 	resp, _ = nodeExec[broadcastResp.BroadcastRespResult[any]](wallet.nodeProcess, script)
 	return
 }
