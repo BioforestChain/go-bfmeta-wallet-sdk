@@ -83,7 +83,6 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 	if err != nil {
 		fmt.Println("Failed to start process:", err)
 		panic(err)
-		panic(err)
 	}
 	//if err := cmd.Start(); err != nil {
 	//	fmt.Println("Error starting command:", err)
@@ -197,6 +196,7 @@ func nodeExec[T any](nodeProcess *NodeProcess, jsCode string) (T, error) {
 	nodeProcess.ChannelMap.Store(req_id, channel)
 
 	var evalCode = fmt.Sprintf("await returnToGo(%d, async()=>%v)\r\n\n", req_id, jsCode)
+	//fmt.Println("evalCode", evalCode)
 	_, err := nodeProcess.Stdin.Write([]byte(evalCode))
 	if err != nil {
 		return res, err
@@ -210,6 +210,9 @@ func nodeExec[T any](nodeProcess *NodeProcess, jsCode string) (T, error) {
 		return res, errors.New(result.Message)
 	}
 }
+
+//await returnToGo(2, async()=>globalThis.bfcwalletMap.sdk.api.transaction.broadcastCompleteTransaction("{\"applyBlockHeight\":114208,\"asset\":{\"transferAsset\":{\"amount\":\"185184\",\"assetType\":\"PMC\",\"sourceChainMagic\":\"XXVXQ\",\"sourceChainName\":\"paymetachain\"}},\"effectiveBlockHeight\":114258,\"fee\":\"100000\",\"fromMagic\":\"\",\"range\":[],\"rangeType\":0,\"recipientId\":\"cFqv1tiifgYE6xbhZp43XxbZVJp363BWXt\",\"remark\":{\"orderId\":\"110b45fafcb84cb7a1de7eef5a957855\"},\"senderId\":\"c6C9ycTXrPBu
+//8wXAGhUJHau678YyQwB2Mn\",\"senderPublicKey\":\"0d3c8003248cc4c71493dd67c0c433e75b7a191758df94fb0be5db2c6a94fecd\",\"signature\":\"2d0cea07ab73be6bdab258f12e7e0aa22776a8b9dd7b130f33fdd8fce6534cb0e29bc8d4983d3564178ae4189eedba80a864bda1a4ceb8b197e530ef1774ea07\",\"storageKey\":\"assetType\",\"storageValue\":\"PMC\",\"timestamp\":31839601,\"toMagic\":\"\",\"type\":\"PMC-PAYMETACHAIN-AST-02\",\"version\":1}"))
 
 //func nodeExecCommonResult[T any](nodeProcess *NodeProcess, jsCode string) (T, error) {
 //	var res T
@@ -306,6 +309,7 @@ func (wallet *BCFWallet) GetAccountAsset(req accountAsset.GetAccountAssetParams)
 	return resp
 }
 
+// script 无此方法
 func (wallet *BCFWallet) GetAssets(req assets.PaginationOptions) (resp assetsResp.GetAssetsRespResult) {
 	script := fmt.Sprintf(`
         globalThis.bfcwalletMap.get(%q).getAssets(%d, %d, %q)
@@ -331,8 +335,6 @@ func (wallet *BCFWallet) GetAllAccountAsset(req accountAsset.GetAllAccountAssetR
 }
 
 // / baseApis2
-// todo
-
 func (wallet *BCFWallet) GetBlock(req block.GetBlockParams) (resp blockResp.GetBlockResultResp) {
 	jsonData, err := json.Marshal(req)
 	if err != nil {
@@ -343,13 +345,6 @@ func (wallet *BCFWallet) GetBlock(req block.GetBlockParams) (resp blockResp.GetB
 	resp, _ = nodeExec[blockResp.GetBlockResultResp](wallet.nodeProcess, script)
 	return
 }
-
-// todo resp 同上
-//func (wallet *BCFWallet) GetLastBlock() (resp lastBlockResp.GetBlockResult) {
-//	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getLastBlock()`, wallet.walletId)
-//	resp, _ = nodeExec[lastBlockResp.GetBlockResult](wallet.nodeProcess, script)
-//	return
-//}
 
 func (wallet *BCFWallet) GetLastBlock() (resp lastBlockResp.GetLastBlockResultResp) {
 	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.basic.getLastBlock()`, wallet.walletId)
@@ -363,7 +358,7 @@ func (wallet *BCFWallet) GetTransactions(req transactions.GetTransactionsParams)
 		fmt.Println("Error marshalling to JSON:", err)
 		return
 	}
-	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getTransactions(%v)`, wallet.walletId, string(reqData))
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.basic.getTransactions(%v)`, wallet.walletId, string(reqData))
 	resp, _ = nodeExec[transactionsResp.GetTransactionsResult](wallet.nodeProcess, script)
 	return resp
 }
@@ -374,13 +369,13 @@ func (wallet *BCFWallet) GenerateSecret(req generateSecretReq.GenerateSecretPara
 	//	fmt.Println("Error marshalling to JSON:", err)
 	//	return
 	//}
-	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).generateSecret(%q)`, wallet.walletId, req.Lang)
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.basic.generateSecret(%q)`, wallet.walletId, req.Lang)
 	resp, _ = nodeExec[generateSecretResp.GenerateSecretRespResult](wallet.nodeProcess, script)
 	return
 }
 
 func (wallet *BCFWallet) CreateAccount(req createAccountReq.CreateAccountReq) (resp createAccountResp.CreateAccountRespResult) {
-	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).createAccount(%q)`, wallet.walletId, req.Secret)
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.basic.createAccount(%q)`, wallet.walletId, req.Secret)
 	resp, _ = nodeExec[createAccountResp.CreateAccountRespResult](wallet.nodeProcess, script)
 	return
 }
@@ -393,7 +388,13 @@ func (wallet *BCFWallet) BroadcastCompleteTransaction(req broadcast.Params) (res
 		fmt.Println("Error marshalling to JSON:", err)
 		return
 	}
+	// w = new require('@bfmeta/wallet-bcf').BCFWalletFactory({
+	//        enable: true, host: [{ip: "34.84.178.63", port: 19503}], browserPath: "https://qapmapi.pmchainbox.com/browser",
+	//    });
+	//sdk.api.transaction.broadcastCompleteTransaction("{\"applyBlockHeight\":114208,\"asset\":{\"transferAsset\":{\"amount\":\"185184\",\"assetType\":\"PMC\",\"sourceChainMagic\":\"XXVXQ\",\"sourceChainName\":\"paymetachain\"}},\"effectiveBlockHeight\":114258,\"fee\":\"100000\",\"fromMagic\":\"\",\"range\":[],\"rangeType\":0,\"recipientId\":\"cFqv1tiifgYE6xbhZp43XxbZVJp363BWXt\",\"remark\":{\"orderId\":\"110b45fafcb84cb7a1de7eef5a957855\"},\"senderId\":\"c6C9ycTXrPBu8wXAGhUJHau678YyQwB2Mn\",\"senderPublicKey\":\"0d3c8003248cc4c71493dd67c0c433e75b7a191758df94fb0be5db2c6a94fecd\",\"signature\":\"2d0cea07ab73be6bdab258f12e7e0aa22776a8b9dd7b130f33fdd8fce6534cb0e29bc8d4983d3564178ae4189eedba80a864bda1a4ceb8b197e530ef1774ea07\",\"storageKey\":\"assetType\",\"storageValue\":\"PMC\",\"timestamp\":31839601,\"toMagic\":\"\",\"type\":\"PMC-PAYMETACHAIN-AST-02\",\"version\":1}"))
+
 	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.transaction.broadcastCompleteTransaction(%q)`, wallet.walletId, string(reqData))
+	//fmt.Println("broadcastCompleteTransaction sc", script)
 	resp, _ = nodeExec[broadcastResp.BroadcastRespResult[any]](wallet.nodeProcess, script)
 	return
 }

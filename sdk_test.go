@@ -61,6 +61,10 @@ func TestSdk(t *testing.T) {
 	//ey:"", IsDelegate:false, IsAcceptVote:false, AccountStatus:0, EquityInfo:accountResp.EquityInfo{Round:0, Equity:"", FixedEquity:""}}}
 	log.Printf("accountInfo= %#v\n", accountInfo)
 
+	//defer sdkClient.Close()
+}
+
+func TestSdkAsset(t *testing.T) {
 	//getAccountAsset
 	accountAssetReq := accountAssetEntityReq.GetAccountAssetParams{
 		"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
@@ -69,15 +73,6 @@ func TestSdk(t *testing.T) {
 	//accountAssetResp.GetAccountAssetRespResult{Success:true, Result:accountAssetResp.GetAccountAssetResp{Address:"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma", Assets:accountAssetResp.AssetsMap{"XXVXQ":map[string]accountAssetResp.AssetDetail{"PMC":accountAssetResp.AssetDetail{Sour
 	//ceChainMagic:"XXVXQ", AssetType:"PMC", SourceChainName:"paymetachain", AssetNumber:"1789879447994549065"}, "USDM":accountAssetResp.AssetDetail{SourceChainMagic:"XXVXQ", AssetType:"USDM", SourceChainName:"paymetachain", AssetNumber:"4949328785323"}}}, ForgingRewards:"10000541419", VotingRewards:""}}
 	log.Printf("accountAsset= %#v\n", accountAsset)
-
-	assetsReq := assets.PaginationOptions{
-		1,
-		2,
-		"USDM",
-	}
-	asset := wallet.GetAssets(assetsReq)
-	//assetsResp.GetAssetsRespResult{Success:false, Result:assetsResp.GetAssetsResp{Page:0, PageSize:0, Total:0, HasMore:false, DataList:[]assetsResp.GetAssetsData(nil)}}
-	log.Printf("asset= %#v\n", asset)
 
 	//getAllAccountAsset
 	allAccountAssetReq := accountAssetEntityReq.GetAllAccountAssetReq{
@@ -98,11 +93,22 @@ func TestSdk(t *testing.T) {
 	//1KYz2dYU1RfuxbB8Ma", SourceChainName:"paymetachain", IssuedAssetPrealnum:"1000000000000000000", RemainAssetPrealnum:"1000000000000000000", FrozenMainAssetPrealnum:"100032000498000", PublishTime:1715325195000, SourceChainMagic:"XXVXQ"}, AddressQty:237}, IconURL:"https://bfm-fonts-cdn.oss-cn-hongkong.a
 	//liyuncs.com/meta-icon/pmc/icon-USDM.png"}}
 	log.Printf("assetDetails= %#v\n", assetDetails)
+}
+
+func TestTodo(t *testing.T) {
+	assetsReq := assets.PaginationOptions{
+		1,
+		2,
+		"PMC",
+	}
+	asset := wallet.GetAssets(assetsReq)
+	//assetsResp.GetAssetsRespResult{Success:false, Result:assetsResp.GetAssetsResp{Page:0, PageSize:0, Total:0, HasMore:false, DataList:[]assetsResp.GetAssetsData(nil)}}
+	log.Printf("asset= %#v\n", asset)
 
 	//GetTransactionsParams
 	//todo 是否需要测试 Signature
 	reqTra := transactions.GetTransactionsParams{
-		Signature:    "exampleSignature",
+		//Signature:    "exampleSignature",
 		Height:       12345,
 		MinHeight:    10000,
 		MaxHeight:    20000,
@@ -133,7 +139,6 @@ func TestSdk(t *testing.T) {
 	createAccountResp := wallet.CreateAccount(reqCreateAccount)
 	log.Printf("createAccountResp= %#v\n", createAccountResp)
 
-	//defer sdkClient.Close()
 }
 
 func TestGetBlock(t *testing.T) {
