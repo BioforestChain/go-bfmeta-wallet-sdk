@@ -85,15 +85,6 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 		panic(err)
 	}
 
-	defer func() {
-		nodeProcess.Stdin.Close()
-		if err := nodeProcess.Cmd.Wait(); err != nil {
-			fmt.Println("Error waiting for command:", err)
-		} else {
-			fmt.Println("Command finished successfully")
-		}
-	}()
-
 	//if err := cmd.Start(); err != nil {
 	//	fmt.Println("Error starting command:", err)
 	//	return
@@ -151,9 +142,22 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 	return nodeProcess
 }
 func (p *NodeProcess) CloseProcess() error {
-	p.Stdin.Close()
+	defer func() {
+		if err := p.Stdin.Close(); err != nil {
+			fmt.Println("Error Stdin for command:", err)
+		} else {
+			fmt.Println("Stdin finished successfully")
+		}
+		if err := p.Cmd.Wait(); err != nil {
+			fmt.Println("Error waiting for command:", err)
+		} else {
+			fmt.Println("Command finished successfully")
+		}
+	}()
+	return nil
+	//p.Stdin.Close()
 	//p.Cmd.Wait()
-	return p.Cmd.Cancel()
+	//return p.Cmd.Cancel()
 }
 
 type BCFWalletSDK struct {
@@ -162,7 +166,7 @@ type BCFWalletSDK struct {
 }
 
 func (sdk *BCFWalletSDK) Close() {
-	sdk.nodeProcess.CloseProcess()
+	//sdk.nodeProcess.CloseProcess()
 }
 
 func NewLocalBCFWalletSDK(debug bool) BCFWalletSDK {
@@ -193,6 +197,26 @@ func NewBCFWalletSDK() BCFWalletSDK {
 
 	// 启动Node.js进程
 	nodeProcess := newNodeProcess(repl, []string{}, false)
+
+	defer func() {
+		if err := nodeProcess.Stdin.Close(); err != nil {
+			fmt.Println("Error Stdin for command:", err)
+		} else {
+			fmt.Println("Stdin finished successfully")
+		}
+		if err := nodeProcess.Cmd.Wait(); err != nil {
+			fmt.Println("Error waiting for command:", err)
+		} else {
+			fmt.Println("Command Wait finished successfully")
+		}
+
+		if err := nodeProcess.Cmd.Cancel(); err != nil {
+			fmt.Println("Error Cancel for command:", err)
+		} else {
+			fmt.Println("Command Cancel finished successfully")
+		}
+	}()
+
 	return BCFWalletSDK{nodeProcess: nodeProcess}
 }
 

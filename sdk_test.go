@@ -87,6 +87,7 @@ func TestGetBlock(t *testing.T) {
 	}
 	block := wallet.GetBlock(p)
 	log.Printf("block= %#v\n", block)
+	defer sdkClient.Close()
 }
 
 func TestGetLastBlock(t *testing.T) {
