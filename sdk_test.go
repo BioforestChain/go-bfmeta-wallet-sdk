@@ -34,24 +34,6 @@ func TestSdk(t *testing.T) {
 	balance := wallet.GetAddressBalance(p)
 	log.Printf("balance= %#v\n", balance)
 
-	//GetTransactionsParams
-	req := transactions.GetTransactionsParams{
-		Signature:    "exampleSignature",
-		Height:       12345,
-		MinHeight:    10000,
-		MaxHeight:    20000,
-		SenderId:     "exampleSenderId",
-		RecipientId:  "exampleRecipientId",
-		Address:      "exampleAddress",
-		Type:         []string{"transfer", "stake"},
-		StorageValue: "exampleStorageValue",
-		Page:         1,
-		PageSize:     50,
-		Sort:         1,
-	}
-	transactionsByBrowse, _ := wallet.GetTransactionsByBrowser(req)
-	log.Printf("transactionsByBrowse= %#v\n", transactionsByBrowse)
-
 	//getAccountInfo
 	accountInfoReq := account.GetAccountInfoParams{
 		"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
@@ -95,7 +77,43 @@ func TestSdkAsset(t *testing.T) {
 	log.Printf("assetDetails= %#v\n", assetDetails)
 }
 
-func TestTodo(t *testing.T) {
+func TestGetBlock(t *testing.T) {
+	p := block.GetBlockParams{
+		//test 不传
+		//Signature: "abc123",
+		Height:   10,
+		Page:     1,
+		PageSize: 20,
+	}
+	block := wallet.GetBlock(p)
+	log.Printf("block= %#v\n", block)
+}
+
+func TestGetLastBlock(t *testing.T) {
+	lastBlock := wallet.GetLastBlock()
+	log.Printf("lastBlock= %#v\n", lastBlock)
+}
+
+// /
+func TestSomeTransactionEvent(t *testing.T) {
+	//GetTransactionsParams
+	req := transactions.GetTransactionsParams{
+		Signature:    "exampleSignature",
+		Height:       12345,
+		MinHeight:    10000,
+		MaxHeight:    20000,
+		SenderId:     "exampleSenderId",
+		RecipientId:  "exampleRecipientId",
+		Address:      "exampleAddress",
+		Type:         []string{"transfer", "stake"},
+		StorageValue: "exampleStorageValue",
+		Page:         1,
+		PageSize:     50,
+		Sort:         1,
+	}
+	transactionsByBrowse, _ := wallet.GetTransactionsByBrowser(req)
+	log.Printf("transactionsByBrowse= %#v\n", transactionsByBrowse)
+
 	assetsReq := assets.PaginationOptions{
 		1,
 		2,
@@ -106,7 +124,7 @@ func TestTodo(t *testing.T) {
 	log.Printf("asset= %#v\n", asset)
 
 	//GetTransactionsParams
-	//todo 是否需要测试 Signature
+	//目前测试 不传Signature
 	reqTra := transactions.GetTransactionsParams{
 		//Signature:    "exampleSignature",
 		Height:       12345,
@@ -139,23 +157,6 @@ func TestTodo(t *testing.T) {
 	createAccountResp := wallet.CreateAccount(reqCreateAccount)
 	log.Printf("createAccountResp= %#v\n", createAccountResp)
 
-}
-
-func TestGetBlock(t *testing.T) {
-	p := block.GetBlockParams{
-		//test 不传
-		//Signature: "abc123",
-		Height:   10,
-		Page:     1,
-		PageSize: 20,
-	}
-	block := wallet.GetBlock(p)
-	log.Printf("block= %#v\n", block)
-}
-
-func TestGetLastBlock(t *testing.T) {
-	lastBlock := wallet.GetLastBlock()
-	log.Printf("lastBlock= %#v\n", lastBlock)
 }
 
 // todo test params
@@ -197,6 +198,17 @@ func TestBroadcastCompleteTransaction(t *testing.T) {
 	log.Printf("bCTResp= %#v\n", bCTResp)
 }
 
+func TestBroadcastTransferAsset(t *testing.T) {
+	req := broadcastTra.BroadcastTransactionParams{
+		Signature:     "exampleSignature",
+		SignSignature: "exampleSignSignature",
+		Buffer:        "exampleBuffer",
+		IsOnChain:     true,
+	}
+	broadcastTransferAsset, _ := wallet.BroadcastTransferAsset(req)
+	log.Printf("broadcastTransferAsset= %#v\n", broadcastTransferAsset)
+}
+
 func TestCreateTransferAsset(t *testing.T) {
 	reqCreateTransferAsset := createTransferAsset.TransferAssetTransactionParams{
 		TransactionCommonParamsWithRecipientId: createTransferAsset.TransactionCommonParamsWithRecipientId{
@@ -236,15 +248,4 @@ func TestPackageTransferAsset(t *testing.T) {
 	}
 	pkgTransferAssetResp, _ := wallet.PackageTransferAsset(req)
 	log.Printf("pkgTransferAssetResp= %#v\n", pkgTransferAssetResp)
-}
-
-func TestBroadcastTransferAsset(t *testing.T) {
-	req := broadcastTra.BroadcastTransactionParams{
-		Signature:     "exampleSignature",
-		SignSignature: "exampleSignSignature",
-		Buffer:        "exampleBuffer",
-		IsOnChain:     true,
-	}
-	broadcastTransferAsset, _ := wallet.BroadcastTransferAsset(req)
-	log.Printf("broadcastTransferAsset= %#v\n", broadcastTransferAsset)
 }
