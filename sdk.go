@@ -153,8 +153,8 @@ type BCFWalletSDK struct {
 	nodeProcess *NodeProcess
 }
 
-func (sdk *BCFWalletSDK) Close() {
-	//sdk.nodeProcess.CloseProcess()
+func (sdk *BCFWalletSDK) Close() error {
+	return sdk.nodeProcess.Cmd.Process.Kill()
 }
 
 func NewLocalBCFWalletSDK(debug bool) BCFWalletSDK {
