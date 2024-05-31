@@ -6,9 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/asymmetricDecrypt"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/block"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcastTra"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/pkgTranscaction"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/asymmetricDecryptResp"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/asymmetricEncryptResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/blockResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/broadcastResultResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/createTransferAssetResp"
@@ -378,7 +381,7 @@ func (wallet *BCFWallet) BroadcastCompleteTransaction(req broadcast.Params) (res
 	//    });
 	//sdk.api.transaction.broadcastCompleteTransaction("{\"applyBlockHeight\":114208,\"asset\":{\"transferAsset\":{\"amount\":\"185184\",\"assetType\":\"PMC\",\"sourceChainMagic\":\"XXVXQ\",\"sourceChainName\":\"paymetachain\"}},\"effectiveBlockHeight\":114258,\"fee\":\"100000\",\"fromMagic\":\"\",\"range\":[],\"rangeType\":0,\"recipientId\":\"cFqv1tiifgYE6xbhZp43XxbZVJp363BWXt\",\"remark\":{\"orderId\":\"110b45fafcb84cb7a1de7eef5a957855\"},\"senderId\":\"c6C9ycTXrPBu8wXAGhUJHau678YyQwB2Mn\",\"senderPublicKey\":\"0d3c8003248cc4c71493dd67c0c433e75b7a191758df94fb0be5db2c6a94fecd\",\"signature\":\"2d0cea07ab73be6bdab258f12e7e0aa22776a8b9dd7b130f33fdd8fce6534cb0e29bc8d4983d3564178ae4189eedba80a864bda1a4ceb8b197e530ef1774ea07\",\"storageKey\":\"assetType\",\"storageValue\":\"PMC\",\"timestamp\":31839601,\"toMagic\":\"\",\"type\":\"PMC-PAYMETACHAIN-AST-02\",\"version\":1}"))
 
-	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.transaction.broadcastCompleteTransaction(%q)`, wallet.walletId, string(reqData))
+	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.transaction.broadcastCompleteTransaction(JSON.parse(%q))`, wallet.walletId, string(reqData))
 	//fmt.Println("broadcastCompleteTransaction sc", script)
 	resp, _ = nodeExec[broadcastResp.BroadcastRespResult[any]](wallet.nodeProcess, script)
 	return
@@ -465,8 +468,6 @@ func (util *BCFSignUtil) CreateKeypair(secret string) (res ResKeyPair, err error
 	//res.PublicKey = base64.StdEncoding.EncodeToString(keypair.bytePublicKey)
 	res.SecretKey = keypair.SecretKey
 	res.PublicKey = keypair.PublicKey
-	//a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd
-	//a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd
 	return res, err
 }
 
@@ -627,4 +628,76 @@ func (util *BCFSignUtil) SignToString(msg, secretKey []byte) (string, error) {
 		return "", errors.New("msg or secretKey is invalid")
 	}
 	return got, nil
+}
+
+// /**
+//   - 验证签名
+//     *
+//   - @param message
+//   - @param signatureBuffer
+//   - @param publicKeyBuffer
+//   - @returns
+//     */
+//
+// detachedVeriy(message: Uint8Array, signatureBuffer: Uint8Array, publicKeyBuffer: Uint8Array): Promise<boolean>;
+func (util *BCFSignUtil) DetachedVeriy(message, signatureBuffer, publicKeyBuffer []byte) (res bool, err error) {
+	script := fmt.Sprintf(`(
+		await globalThis.signUtilMap.get(%s)
+		.detachedVeriy(Buffer.from(%q,"hex"),Buffer.from(%q,"hex"),Buffer.from(%q,"hex"))
+)
+`, util.signUtilId, message, signatureBuffer, publicKeyBuffer)
+	res, err = nodeExec[bool](util.nodeProcess, script)
+	if res == false {
+		return res, errors.New("msg or secretKey is invalid")
+	}
+	return res, nil
+}
+
+/**
+ * 非对称加密
+ *
+ * @param msg
+ * @param decryptPK
+ * @param encryptSK
+ */
+//asymmetricEncrypt(msg: Uint8Array, decryptPK: Uint8Array, encryptSK: Uint8Array): {
+//encryptedMessage: Uint8Array;
+//nonce: Uint8Array;
+//};
+
+func (util *BCFSignUtil) AsymmetricEncrypt(msg, decryptPK, encryptSK []byte) (res asymmetricEncryptResp.ResAsymmetricEncrypt, err error) {
+	script := fmt.Sprintf(`{
+		const got = await globalThis.signUtilMap.get(%s).asymmetricEncrypt((Buffer.from(%q,"hex")),(Buffer.from(%q,"hex")),(Buffer.from(%q,"hex")));
+		return {
+			encryptedMessage:got.encryptedMessage.toString("hex"),
+			nonce:got.nonce.toString("hex"),
+		}
+	}
+`, util.signUtilId, msg, decryptPK, encryptSK)
+	res, err = nodeExec[asymmetricEncryptResp.ResAsymmetricEncrypt](util.nodeProcess, script)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
+}
+
+// 非对称解密
+//
+//	asymmetricDecrypt(encryptedMessage: Uint8Array, encryptPK: Uint8Array, decryptSK: Uint8Array, nonce?: Uint8Array): false | Uint8Array;
+func (util *BCFSignUtil) AsymmetricDecrypt(req asymmetricDecrypt.Req) (res asymmetricDecryptResp.ResAsymmetricDecrypt, err error) {
+	script := fmt.Sprintf(`{
+		const got = await globalThis.signUtilMap.get(%s).asymmetricDecrypt(
+(Buffer.from(%q,"hex")),(Buffer.from(%q,"hex")),(Buffer.from(%q,"hex")),(Buffer.from(%q,"hex"))
+);
+		return {
+			encryptedMessage:got.encryptedMessage.toString("hex"),
+			nonce:got.nonce.toString("hex"),
+		}
+	}
+`, util.signUtilId, req.EncryptedMessage, req.EncryptPK, req.DecryptSK, req.Nonce)
+	res, err = nodeExec[asymmetricDecryptResp.ResAsymmetricDecrypt](util.nodeProcess, script)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
 }

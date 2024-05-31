@@ -9,6 +9,7 @@ import (
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/address"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assetDetails"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assets"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/asymmetricDecrypt"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/block"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcast"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcastTra"
@@ -184,6 +185,7 @@ func TestSomeTransactionEvent(t *testing.T) {
 // todo test params
 // https://qatracker.pmchainbox.info/#/info/transaction-data/2d0cea07ab73be6bdab258f12e7e0aa22776a8b9dd7b130f33fdd8fce6534cb0e29bc8d4983d3564178ae4189eedba80a864bda1a4ceb8b197e530ef1774ea07
 // params transaction 这个结构
+// {"success":false,"error":{"message":"fromMagic in body is required","code":"001-00002"},"minFee":972}
 func TestBroadcastCompleteTransaction(t *testing.T) {
 	//broadcastCompleteTransaction
 	reqBroadcastCompleteTransaction := broadcast.Params{
@@ -221,8 +223,21 @@ func TestBroadcastCompleteTransaction(t *testing.T) {
 }
 
 func TestBroadcastTransferAsset(t *testing.T) {
+	//助记词
+	var word = "123"
+	bCFSignUtil_CreateKeypair, _ := bCFSignUtil.CreateKeypair(word)
+	//bCFSignUtil_CreateKeypair.SecretKey
+	var s = []byte(word)
+	//var ss = []byte("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd")
+	var ss = []byte(bCFSignUtil_CreateKeypair.SecretKey)
+	got, _ := bCFSignUtil.DetachedSign(s, ss)
+	log.Printf("DetachedSign srcType= %#v\n", got.Type)
+	log.Printf("DetachedSign srcData= %#v\n", got.Data)
+	sign := hex.EncodeToString(got.Data)
+	//buffer createTransferAssetResp.Result.Buffer 取得..
 	req := broadcastTra.BroadcastTransactionParams{
-		Signature: "801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02",
+		//Signature: "801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02",
+		Signature: sign,
 		//SignSignature: "exampleSignSignature",
 		Buffer:    "string",
 		IsOnChain: true,
@@ -238,26 +253,13 @@ func TestCreateTransferAsset(t *testing.T) {
 				PublicKey:        "examplePublicKey",
 				Fee:              "0.1",
 				ApplyBlockHeight: 100,
-				Remark: map[string]string{
-					"note": "example transaction",
-				},
-				BinaryInfos: []createTransferAsset.KVStorageInfo{
-					{
-						Key: "exampleKey",
-						FileInfo: createTransferAsset.FileInfo{
-							Name: "exampleFile",
-							Size: 1234,
-						},
-					},
-				},
-				Timestamp: 1622732931,
 			},
 			RecipientId: "exampleRecipientId",
 		},
 		SourceChainMagic: "exampleSourceChainMagic",
 		SourceChainName:  "exampleSourceChainName",
 		AssetType:        "exampleAssetType",
-		Amount:           "10.0",
+		Amount:           "100",
 	}
 	createTransferAssetResp, _ := wallet.CreateTransferAsset(reqCreateTransferAsset)
 	log.Printf("createTransferAssetResp= %#v\n", createTransferAssetResp)
@@ -367,4 +369,34 @@ func TestBCFSignUtil_SignToString(t *testing.T) {
 	got, _ := bCFSignUtil.SignToString(s, ss)
 	//DetachedSign= "801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02"
 	log.Printf("SignToString= %#v\n", got)
+}
+
+func TestBCFSignUtil_DetachedVeriy(t *testing.T) {
+	var message = []byte("123")
+	var signatureBuffer = []byte("801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02")
+	var publicKeyBuffer = []byte("a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd")
+	got, _ := bCFSignUtil.DetachedVeriy(message, signatureBuffer, publicKeyBuffer)
+	//DetachedSign= "801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02"
+	log.Printf("SignToString= %#v\n", got)
+}
+
+func TestBCFSignUtil_AsymmetricEncrypt(t *testing.T) {
+	var msg = []byte("123")
+	var decryptPK = []byte("801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02")
+	var encryptSK = []byte("a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd")
+	got, _ := bCFSignUtil.AsymmetricEncrypt(msg, decryptPK, encryptSK)
+	//{"encryptedMessage":"117,56,228,3,87,171,27,39,24,162,27,204,28,18,218,165,44","nonce":"0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"}
+	log.Printf("AsymmetricEncrypt= %#v\n", got)
+}
+func TestBCFSignUtil_AsymmetricDecrypt(t *testing.T) {
+	var decryptPK = []byte("801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02")
+	var encryptSK = []byte("a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd")
+	var req = asymmetricDecrypt.Req{
+		DecryptSK:        decryptPK,
+		Nonce:            []byte("1"),
+		EncryptedMessage: []byte("117,56,228,3,87,171,27,39,24,162,27,204,28,18,218,165,44"),
+		EncryptPK:        encryptSK,
+	}
+	got, _ := bCFSignUtil.AsymmetricDecrypt(req)
+	log.Printf("AsymmetricDecrypt= %#v\n", got)
 }
