@@ -696,7 +696,7 @@ type ResSignToString struct {
 
 func (util *BCFSignUtil) DetachedSign(msg, secretKey []byte) (res ResSignToString, err error) {
 	script := fmt.Sprintf(`{
-		const got = await globalThis.signUtilMap.get(%s).detachedSign(Buffer.from(%q,"hex"),Buffer.from(%q,"hex"));
+		const got = await globalThis.signUtilMap.get(%s).detachedSign(Buffer.from(%q,"base64"),Buffer.from(%q,"hex"));
 		console.log("DetachedSign got to str",got.toString("hex"));
 		return got;
 }
