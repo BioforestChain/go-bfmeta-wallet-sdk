@@ -2,6 +2,7 @@ package sdk_test
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	sdk "github.com/BioforestChain/go-bfmeta-wallet-sdk"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
 	accountAssetEntityReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/accountAsset"
@@ -221,10 +222,10 @@ func TestBroadcastCompleteTransaction(t *testing.T) {
 
 func TestBroadcastTransferAsset(t *testing.T) {
 	req := broadcastTra.BroadcastTransactionParams{
-		Signature:     "exampleSignature",
-		SignSignature: "exampleSignSignature",
-		Buffer:        "exampleBuffer",
-		IsOnChain:     true,
+		Signature: "801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02",
+		//SignSignature: "exampleSignSignature",
+		Buffer:    "string",
+		IsOnChain: true,
 	}
 	broadcastTransferAsset, _ := wallet.BroadcastTransferAsset(req)
 	log.Printf("broadcastTransferAsset= %#v\n", broadcastTransferAsset)
@@ -335,4 +336,35 @@ func TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecret(t *testin
 	//GetSecondPublicKeyFromSecretAndSecondSecret= "bb3d939c1d91e95154c8ec5683e981865e0baa3cbaa25bd382f1bde5b693306d"
 	//--- PASS: TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecret (0.02s)
 	log.Printf("GetSecondPublicKeyFromSecretAndSecondSecret= %#v\n", got)
+}
+
+// 生成签名
+func TestBCFSignUtil_DetachedSign(t *testing.T) {
+	var s = []byte("123")
+	var ss = []byte("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd")
+	got, _ := bCFSignUtil.DetachedSign(s, ss)
+	log.Printf("DetachedSign srcType= %#v\n", got.Type)
+	log.Printf("DetachedSign srcData= %#v\n", got.Data)
+	//DetachedSign srcType= "Buffer"
+	//DetachedSign srcData= []byte{0x80, 0x1e, 0x19, 0xac, 0x71, 0x48, 0x3, 0xca, 0x50, 0xd5, 0x3b, 0xa8, 0x2, 0x66, 0x7a, 0xdc, 0x99, 0xf8, 0x2c, 0x21, 0xbf, 0x4b, 0x5d, 0xfb, 0xbf, 0xd0, 0xc4, 0xb7, 0x66, 0x10, 0x3a, 0xf1, 0xcf, 0x6c, 0x56, 0x94, 0x41, 0x24, 0xbd, 0x9f, 0x21, 0x9b, 0x19, 0x10, 0x13, 0x54, 0x69, 0x79, 0x6b, 0x81, 0x7f, 0xef, 0xe5, 0xab, 0xb0, 0x1a, 0xab, 0xc8, 0xdf, 0x87, 0x72, 0x49, 0x5a, 0x2}
+	//go 方式转换成string
+	sign := hex.EncodeToString(got.Data)
+	//DetachedSign= "801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02"
+	log.Printf("DetachedSign= %#v\n", sign)
+}
+
+/**
+ * 签名并且转成 hex 字符串
+ *
+ * @param message
+ * @param secretKey
+ * @returns
+ */
+//signToString(message: Uint8Array, secretKey: Uint8Array): Promise<string>;
+func TestBCFSignUtil_SignToString(t *testing.T) {
+	var s = []byte("123")
+	var ss = []byte("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd")
+	got, _ := bCFSignUtil.SignToString(s, ss)
+	//DetachedSign= "801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02"
+	log.Printf("SignToString= %#v\n", got)
 }

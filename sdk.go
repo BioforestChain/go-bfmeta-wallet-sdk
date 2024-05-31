@@ -589,3 +589,39 @@ func (util *BCFSignUtil) GetSecondPublicKeyFromSecretAndSecondSecret(secret, sec
 	res.PublicKey = keypair.PublicKey
 	return res, nil
 }
+
+///
+//const signature = (await bfmetaSDK.bfchainSignUtil.detachedSign(bytes, keypair.secretKey)).toString("hex");
+
+type ResSignToString struct {
+	Type string `json:"type,omitempty"`
+	Data []byte `json:"data,omitempty"`
+}
+
+func (util *BCFSignUtil) DetachedSign(msg, secretKey []byte) (res ResSignToString, err error) {
+	script := fmt.Sprintf(`{
+		const got = await globalThis.signUtilMap.get(%s).detachedSign(Buffer.from(%q,"hex"),Buffer.from(%q,"hex"));
+		console.log("DetachedSign got to str",got.toString("hex"));
+		return got;
+}
+`, util.signUtilId, msg, secretKey)
+	res, _ = nodeExec[ResSignToString](util.nodeProcess, script)
+	if len(res.Data) == 0 {
+		return res, errors.New("msg or secretKey is invalid")
+	}
+	return res, nil
+}
+
+func (util *BCFSignUtil) SignToString(msg, secretKey []byte) (string, error) {
+	script := fmt.Sprintf(`(
+		await globalThis.signUtilMap.get(%s)
+		.signToString(Buffer.from(%q,"hex"),Buffer.from(%q,"hex"))
+)
+		
+`, util.signUtilId, msg, secretKey)
+	got, _ := nodeExec[string](util.nodeProcess, script)
+	if got == "" {
+		return "", errors.New("msg or secretKey is invalid")
+	}
+	return got, nil
+}
