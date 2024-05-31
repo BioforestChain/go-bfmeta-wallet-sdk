@@ -390,7 +390,7 @@ func (wallet *BCFWallet) CreateTransferAsset(req createTransferAsset.TransferAss
 		return result, err
 	}
 	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.transaction
-.createTransferAsset(%q)`, wallet.walletId, string(reqData))
+.createTransferAsset(JSON.parse(%q))`, wallet.walletId, string(reqData))
 	result, err = nodeExec[createTransferAssetResp.CreateResult](wallet.nodeProcess, script)
 	return result, err
 }
@@ -412,7 +412,7 @@ func (wallet *BCFWallet) BroadcastTransferAsset(req broadcastTra.BroadcastTransa
 		return resp, err
 	}
 	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.transaction
-.broadcastTransferAsset(%q)`, wallet.walletId, string(reqData))
+.broadcastTransferAsset(JSON.parse(%q))`, wallet.walletId, string(reqData))
 	resp, err = nodeExec[broadcastResultResp.BroadcastResult](wallet.nodeProcess, script)
 	return resp, err
 }
