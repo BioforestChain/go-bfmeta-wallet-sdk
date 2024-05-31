@@ -449,7 +449,7 @@ type ResKeyPair struct {
 func (util *BCFSignUtil) CreateKeypair(secret string) (res ResKeyPair, err error) {
 	var keypair KeyPair
 	script := fmt.Sprintf(`{
-		const keypair = await globalThis.signUtilMap.get(%s).createKeypair(%q)
+		const keypair = await globalThis.signUtilMap.get(%s).createKeypair(%q);
 		return {
 			secretKey:keypair.secretKey.toString("hex"),
 			publicKey:keypair.publicKey.toString("hex"),
@@ -457,6 +457,9 @@ func (util *BCFSignUtil) CreateKeypair(secret string) (res ResKeyPair, err error
 	}`, util.signUtilId, secret)
 	//SRC   {"secretKey":"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd","publicKey":"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
 	keypair, err = nodeExec[KeyPair](util.nodeProcess, script)
+	if err != nil {
+		log.Fatal("CreateKeypair err :", err)
+	}
 	// 将数据编码为 Base64 字符串
 	//res.SecretKey = base64.StdEncoding.EncodeToString(keypair.byteSecretKey)
 	//res.PublicKey = base64.StdEncoding.EncodeToString(keypair.bytePublicKey)

@@ -276,7 +276,7 @@ func TestPackageTransferAsset(t *testing.T) {
 // 获取 PublicKey
 // sdk.ResKeyPair{SecretKey:"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd", PublicKey:"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
 func TestBCFSignUtil_CreateKeypair(t *testing.T) {
-	bCFSignUtil_CreateKeypair, _ := bCFSignUtil.CreateKeypair("123")
+	bCFSignUtil_CreateKeypair, _ := bCFSignUtil.CreateKeypair("123456")
 	log.Printf("bCFSignUtil_CreateKeypair= %#v\n", bCFSignUtil_CreateKeypair)
 }
 
