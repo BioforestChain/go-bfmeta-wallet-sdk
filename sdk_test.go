@@ -1,6 +1,7 @@
 package sdk_test
 
 import (
+	"encoding/base64"
 	sdk "github.com/BioforestChain/go-bfmeta-wallet-sdk"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
 	accountAssetEntityReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/accountAsset"
@@ -24,6 +25,8 @@ var sdkClient = sdk.NewLocalBCFWalletSDK(true)
 // var sdkClient = sdk.NewBCFWalletSDK()
 var wallet = sdkClient.NewBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
 
+var bCFSignUtil = sdkClient.NewBCFSignUtil("c")
+
 func TestSdk(t *testing.T) {
 	//getAddressBalance
 	p := address.Params{
@@ -42,6 +45,22 @@ func TestSdk(t *testing.T) {
 	//accountInfo= accountResp.GetAccountInfoRespResult{Success:true, Result:accountResp.GetAccountInfoResp{Address:"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma", PublicKey:"4bda2c5366b10e709c560e846e4041d355446c910dd6238e418092af5736c227", SecondPublicK
 	//ey:"", IsDelegate:false, IsAcceptVote:false, AccountStatus:0, EquityInfo:accountResp.EquityInfo{Round:0, Equity:"", FixedEquity:""}}}
 	log.Printf("accountInfo= %#v\n", accountInfo)
+	//// 1. 获取区块高度
+	//wallet.GetLastBlock()
+	//// 2. 获取余额. 需要传地址 magic 币名
+	//// 如果需要magic 就从 区块里面取magic
+	////
+	//wallet.GetAddressBalance()
+	//// 这个函数只需要传地址,但是要自己解析里面的多个币名
+	//wallet.GetAccountAsset()
+	//// 3. 做转账
+	//// 3.1 生成公私钥对
+	//// 3.2
+	//wallet.CreateTransferAsset()
+	//// 3.3 签名 ts const signature = (await bfmetaSDK.bfchainSignUtil.detachedSign(bytes, keypair.secretKey)).toString("hex");
+	//
+	//// 3.4
+	//wallet.BroadcastTransferAsset()
 
 	defer sdkClient.Close()
 }
@@ -92,6 +111,7 @@ func TestGetBlock(t *testing.T) {
 
 func TestGetLastBlock(t *testing.T) {
 	lastBlock := wallet.GetLastBlock()
+	//
 	log.Printf("lastBlock= %#v\n", lastBlock)
 }
 
@@ -249,4 +269,70 @@ func TestPackageTransferAsset(t *testing.T) {
 	}
 	pkgTransferAssetResp, _ := wallet.PackageTransferAsset(req)
 	log.Printf("pkgTransferAssetResp= %#v\n", pkgTransferAssetResp)
+}
+
+// 获取 SecretKey
+// 获取 PublicKey
+// sdk.ResKeyPair{SecretKey:"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd", PublicKey:"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
+func TestBCFSignUtil_CreateKeypair(t *testing.T) {
+	bCFSignUtil_CreateKeypair, _ := bCFSignUtil.CreateKeypair("123")
+	log.Printf("bCFSignUtil_CreateKeypair= %#v\n", bCFSignUtil_CreateKeypair)
+}
+
+// 根据公钥（Uint8Array）生成地址的二进制数据
+// todo
+func TestBCFSignUtil_GetBinaryAddressFromPublicKey(t *testing.T) {
+	var puk = "a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
+	got, _ := bCFSignUtil.GetBinaryAddressFromPublicKey([]byte(puk))
+	log.Printf("BinaryAddressFromPublicKey= %#v\n", got)
+	log.Printf("BinaryAddressFromPublicKey string = %#v\n", base64.StdEncoding.EncodeToString(got))
+}
+
+func TestBCFSignUtil_GetAddressFromPublicKey(t *testing.T) {
+	var puk = "a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
+	var prefix = "c" //非必传
+	got, _ := bCFSignUtil.GetAddressFromPublicKey([]byte(puk), prefix)
+	//cJsyQNoMxvS1uMkjXv52JQi8X8VzyFCzCR
+	log.Printf("AddressFromPublicKey= %#v\n", got)
+}
+
+func TestBCFSignUtil_GetAddressFromPublicKeyString(t *testing.T) {
+	var puk = "a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
+	var prefix = "c" //非必传
+	got, _ := bCFSignUtil.GetAddressFromPublicKeyString(puk, prefix)
+	//cKFyTV2yNmCxdsnoLSbT25zKTYVa4kHv1e
+	log.Printf("AddressFromPublicKey= %#v\n", got)
+}
+
+func TestBCFSignUtil_GetAddressFromSecret(t *testing.T) {
+	var s = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
+	got, _ := bCFSignUtil.GetAddressFromSecret(s)
+	//cH2yHDdwZ7ZRtcC8L4YoV3kHtRWzi9aoxR
+	log.Printf("AddressFromSecret= %#v\n", got)
+}
+
+func TestBCFSignUtil_CreateSecondKeypair(t *testing.T) {
+	var s = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
+	var ss = "12345678"
+	got, _ := bCFSignUtil.CreateSecondKeypair(s, ss)
+	//CreateSecondKeypair= sdk.ResKeyPair{SecretKey:"9d3292b245d0196e9e2ea7f636b25a84bf518c86ee2af87cb476f754dbf4407dbb3d939c1d91e95154c8ec5683e981865e0baa3cbaa25bd382f1bde5b693306d", PublicKey:"bb3d939c1d91e95154c8ec5683e981865e0baa3cbaa25bd382f1bde5b693306d"}
+	log.Printf("CreateSecondKeypair= %#v\n", got)
+}
+func TestBCFSignUtil_GetSecondPublicKeyFromSecretAndSecondSecret(t *testing.T) {
+	var s = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
+	var ss = "12345678"
+	got, _ := bCFSignUtil.GetSecondPublicKeyFromSecretAndSecondSecret(s, ss)
+	//GetSecondPublicKeyFromSecretAndSecondSecret= sdk.ResPubKeyPair{PublicKey:"bb3d939c1d91e95154c8ec5683e981865e0baa3cbaa25bd382f1bde5b693306d"}
+	//--- PASS: TestBCFSignUtil_GetSecondPublicKeyFromSecretAndSecondSecret (0.02s)
+	//PASS
+	log.Printf("GetSecondPublicKeyFromSecretAndSecondSecret= %#v\n", got)
+}
+func TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecret(t *testing.T) {
+	var s = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
+	var ss = "12345678"
+	var encode = "" //非必传
+	got, _ := bCFSignUtil.GetSecondPublicKeyStringFromSecretAndSecondSecret(s, ss, encode)
+	//GetSecondPublicKeyFromSecretAndSecondSecret= "bb3d939c1d91e95154c8ec5683e981865e0baa3cbaa25bd382f1bde5b693306d"
+	//--- PASS: TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecret (0.02s)
+	log.Printf("GetSecondPublicKeyFromSecretAndSecondSecret= %#v\n", got)
 }

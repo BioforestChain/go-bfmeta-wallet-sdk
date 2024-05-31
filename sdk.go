@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"bufio"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -214,53 +215,34 @@ func nodeExec[T any](nodeProcess *NodeProcess, jsCode string) (T, error) {
 	}
 }
 
-//await returnToGo(2, async()=>globalThis.bfcwalletMap.sdk.api.transaction.broadcastCompleteTransaction("{\"applyBlockHeight\":114208,\"asset\":{\"transferAsset\":{\"amount\":\"185184\",\"assetType\":\"PMC\",\"sourceChainMagic\":\"XXVXQ\",\"sourceChainName\":\"paymetachain\"}},\"effectiveBlockHeight\":114258,\"fee\":\"100000\",\"fromMagic\":\"\",\"range\":[],\"rangeType\":0,\"recipientId\":\"cFqv1tiifgYE6xbhZp43XxbZVJp363BWXt\",\"remark\":{\"orderId\":\"110b45fafcb84cb7a1de7eef5a957855\"},\"senderId\":\"c6C9ycTXrPBu
-//8wXAGhUJHau678YyQwB2Mn\",\"senderPublicKey\":\"0d3c8003248cc4c71493dd67c0c433e75b7a191758df94fb0be5db2c6a94fecd\",\"signature\":\"2d0cea07ab73be6bdab258f12e7e0aa22776a8b9dd7b130f33fdd8fce6534cb0e29bc8d4983d3564178ae4189eedba80a864bda1a4ceb8b197e530ef1774ea07\",\"storageKey\":\"assetType\",\"storageValue\":\"PMC\",\"timestamp\":31839601,\"toMagic\":\"\",\"type\":\"PMC-PAYMETACHAIN-AST-02\",\"version\":1}"))
-
-//func nodeExecCommonResult[T any](nodeProcess *NodeProcess, jsCode string) (T, error) {
-//	var res T
-//	reqIdAcc += 1
-//	req_id := reqIdAcc
-//	channel := make(chan Result)
-//	nodeProcess.ChannelMap.Store(req_id, channel)
-//
-//	var evalCode = fmt.Sprintf("await returnToGo(%d, async()=>%v)\r\n\n", req_id, jsCode)
-//	_, err := nodeProcess.Stdin.Write([]byte(evalCode))
-//	if err != nil {
-//		return res, err
-//	}
-//
-//	result := <-channel
-//	if result.Code == 1 {
-//		var commonResult resp.CommonResult
-//		msgBytes := []byte(result.Message)
-//		err := json.Unmarshal(msgBytes, &commonResult)
-//		if err != nil {
-//			return res, err
-//		}
-//		if commonResult.Success {
-//			err := json.Unmarshal(msgBytes, &res)
-//		} else {
-//
-//		}
-//		return res, err
-//	} else {
-//		return res, errors.New(result.Message)
-//	}
-//}
-
 type BCFWallet struct {
 	nodeProcess *NodeProcess
 	walletId    string
 }
 
-func (sdk BCFWalletSDK) NewBCFWallet(ip string, port int, browserPath string) *BCFWallet {
-	//TODO
+func (sdk *BCFWalletSDK) NewBCFWallet(ip string, port int, browserPath string) *BCFWallet {
 	bfcWalletId, _ := nodeExec[int](sdk.nodeProcess, `{
 		const bfcwalletMap = (globalThis.bfcwalletMap??=new Map());
 		globalThis.bfcwalletIdAcc ??= 0
 		const id = globalThis.bfcwalletIdAcc++
 		const bfcwallet = walletBcf.BCFWalletFactory({
+			enable: true,
+            host: [{ ip: "`+ip+`", port: `+strconv.Itoa(port)+` }],
+            browserPath: "`+browserPath+`",
+        });
+		bfcwalletMap.set(id, bfcwallet)
+		return id;
+	}`)
+	return &BCFWallet{nodeProcess: sdk.nodeProcess, walletId: strconv.Itoa(bfcWalletId)}
+}
+
+func (sdk *BCFWalletSDK) NewBCFWalletSignUtil(ip string, port int, browserPath string) *BCFWallet {
+	//TODO
+	bfcWalletId, _ := nodeExec[int](sdk.nodeProcess, `{
+		const bfcwalletMap = (globalThis.bfcwalletMap??=new Map());
+		globalThis.bfcwalletIdAcc ??= 0
+		const id = globalThis.bfcwalletIdAcc++
+		const bfcwallet = bfmetaSignUtil.BCFWalletFactory({
 			enable: true,
             host: [{ ip: "`+ip+`", port: `+strconv.Itoa(port)+` }],
             browserPath: "`+browserPath+`",
@@ -312,7 +294,7 @@ func (wallet *BCFWallet) GetAccountAsset(req accountAsset.GetAccountAssetParams)
 	return resp
 }
 
-// script 无此方法
+// script
 func (wallet *BCFWallet) GetAssets(req assets.PaginationOptions) (resp assetsResp.GetAssetsRespResult) {
 	script := fmt.Sprintf(`
         globalThis.bfcwalletMap.get(%q).getAssets(%d, %d, %q)
@@ -433,4 +415,177 @@ func (wallet *BCFWallet) BroadcastTransferAsset(req broadcastTra.BroadcastTransa
 .broadcastTransferAsset(%q)`, wallet.walletId, string(reqData))
 	resp, err = nodeExec[broadcastResultResp.BroadcastResult](wallet.nodeProcess, script)
 	return resp, err
+}
+
+type BCFSignUtil struct {
+	nodeProcess *NodeProcess
+	signUtilId  string
+}
+
+func (sdk *BCFWalletSDK) NewBCFSignUtil(prefix string) *BCFSignUtil {
+	signUtilId, _ := nodeExec[int](sdk.nodeProcess, `{
+		const signUtilMap = (globalThis.signUtilMap??=new Map());
+		globalThis.signUtilIdAcc ??= 0
+		const id = globalThis.signUtilIdAcc++
+		const signUtil = new __signUtil.BFMetaSignUtil("`+prefix+`",Buffer,cryptoHelper);
+		signUtilMap.set(id, signUtil)
+		return id;
+	}`)
+	return &BCFSignUtil{nodeProcess: sdk.nodeProcess, signUtilId: strconv.Itoa(signUtilId)}
+}
+
+type KeyPair struct {
+	byteSecretKey []byte `json:"byteSecretKey"`
+	SecretKey     string `json:"secretKey"`
+	bytePublicKey []byte `json:"bytePublicKey"`
+	PublicKey     string `json:"publicKey"`
+}
+
+type ResKeyPair struct {
+	SecretKey string `json:"secretKey,omitempty"`
+	PublicKey string `json:"publicKey,omitempty"`
+}
+
+func (util *BCFSignUtil) CreateKeypair(secret string) (res ResKeyPair, err error) {
+	var keypair KeyPair
+	script := fmt.Sprintf(`{
+		const keypair = await globalThis.signUtilMap.get(%s).createKeypair(%q)
+		return {
+			secretKey:keypair.secretKey.toString("hex"),
+			publicKey:keypair.publicKey.toString("hex"),
+		}
+	}`, util.signUtilId, secret)
+	//SRC   {"secretKey":"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd","publicKey":"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
+	keypair, err = nodeExec[KeyPair](util.nodeProcess, script)
+	// 将数据编码为 Base64 字符串
+	//res.SecretKey = base64.StdEncoding.EncodeToString(keypair.byteSecretKey)
+	//res.PublicKey = base64.StdEncoding.EncodeToString(keypair.bytePublicKey)
+	res.SecretKey = keypair.SecretKey
+	res.PublicKey = keypair.PublicKey
+	//a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd
+	//a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd
+	return res, err
+}
+
+// todo
+func (util *BCFSignUtil) GetBinaryAddressFromPublicKey(publicKey []byte) ([]byte, error) {
+	script := fmt.Sprintf(`(
+	await globalThis.signUtilMap.get(%s).getBinaryAddressFromPublicKey(Buffer.from(%q,"hex")))
+	.toString("hex")
+`, util.signUtilId, hex.EncodeToString(publicKey))
+	binaryAddress, _ := nodeExec[string](util.nodeProcess, script)
+	fmt.Printf("binaryAddress %#v\n", binaryAddress)
+	if binaryAddress == "" {
+		return nil, errors.New("publicKey is invalid")
+	}
+	return hex.DecodeString(binaryAddress)
+}
+
+func (util *BCFSignUtil) GetAddressFromPublicKey(publicKey []byte, prefix string) (string, error) {
+	script := fmt.Sprintf(`(
+		await globalThis.signUtilMap.get(%s)
+		.getAddressFromPublicKey(Buffer.from(%q,"hex"),%q)
+)
+		.toString("hex")
+`, util.signUtilId, hex.EncodeToString(publicKey), prefix)
+	address, _ := nodeExec[string](util.nodeProcess, script)
+	if address == "" {
+		return "", errors.New("publicKey is invalid")
+	}
+	return address, nil
+}
+
+func (util *BCFSignUtil) GetAddressFromPublicKeyString(publicKey, prefix string) (string, error) {
+	script := fmt.Sprintf(`(
+		await globalThis.signUtilMap.get(%s)
+		.getAddressFromPublicKeyString(%q,%q)
+)
+		.toString("hex")
+`, util.signUtilId, publicKey, prefix)
+	address, _ := nodeExec[string](util.nodeProcess, script)
+	if address == "" {
+		return "", errors.New("publicKey is invalid")
+	}
+	return address, nil
+}
+
+func (util *BCFSignUtil) GetAddressFromSecret(secret string) (string, error) {
+	script := fmt.Sprintf(`(
+		await globalThis.signUtilMap.get(%s)
+		.getAddressFromSecret(%q)
+)
+		.toString("hex")
+`, util.signUtilId, secret)
+	address, _ := nodeExec[string](util.nodeProcess, script)
+	if address == "" {
+		return "", errors.New("secret is invalid")
+	}
+	return address, nil
+}
+
+func (util *BCFSignUtil) GetSecondPublicKeyStringFromSecretAndSecondSecret(secret, secondSecret, encode string) (string, error) {
+	var script string
+	if len(encode) > 0 {
+		script = fmt.Sprintf(`(
+		await globalThis.signUtilMap.get(%s)
+		.getSecondPublicKeyStringFromSecretAndSecondSecret(%q,%q,%q)
+)
+		.toString("hex")
+`, util.signUtilId, secret, secondSecret, encode)
+	} else {
+		script = fmt.Sprintf(`(
+		await globalThis.signUtilMap.get(%s)
+		.getSecondPublicKeyStringFromSecretAndSecondSecret(%q,%q)
+)
+		.toString("hex")
+`, util.signUtilId, secret, secondSecret)
+	}
+	got, _ := nodeExec[string](util.nodeProcess, script)
+	if got == "" {
+		return "", errors.New("secret or secondSecret or encode is invalid")
+	}
+	return got, nil
+}
+
+func (util *BCFSignUtil) CreateSecondKeypair(secret, secondSecret string) (res ResKeyPair, err error) {
+	var keypair KeyPair
+	script := fmt.Sprintf(`{
+		const keypair = await globalThis.signUtilMap.get(%s).createSecondKeypair(%q,%q)
+		return {
+			secretKey:keypair.secretKey.toString("hex"),
+			publicKey:keypair.publicKey.toString("hex"),
+		}
+	}
+`, util.signUtilId, secret, secondSecret)
+	keypair, err = nodeExec[KeyPair](util.nodeProcess, script)
+	if err != nil {
+		log.Println("CreateSecondKeypair err : ", err)
+	}
+	res.SecretKey = keypair.SecretKey
+	res.PublicKey = keypair.PublicKey
+	//if address == "" {
+	//	return res, errors.New("secret is invalid")
+	//}
+	return res, nil
+}
+
+type ResPubKeyPair struct {
+	PublicKey string `json:"publicKey,omitempty"`
+}
+
+func (util *BCFSignUtil) GetSecondPublicKeyFromSecretAndSecondSecret(secret, secondSecret string) (res ResPubKeyPair, err error) {
+	var keypair KeyPair
+	script := fmt.Sprintf(`{
+		const got = await globalThis.signUtilMap.get(%s).getSecondPublicKeyFromSecretAndSecondSecret(%q,%q)
+		return {
+			publicKey:got.toString("hex")
+		}
+	}
+`, util.signUtilId, secret, secondSecret)
+	keypair, err = nodeExec[KeyPair](util.nodeProcess, script)
+	if err != nil {
+		log.Println("GetSecondPublicKeyFromSecretAndSecondSecret err : ", err)
+	}
+	res.PublicKey = keypair.PublicKey
+	return res, nil
 }

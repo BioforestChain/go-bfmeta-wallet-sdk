@@ -7,6 +7,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@bfmeta/sign-util": "^1.1.1",
     "@bfmeta/wallet-bcf": "^1.6.7",
     "@bnqkl/util-node": "^1.1.3"
   }
