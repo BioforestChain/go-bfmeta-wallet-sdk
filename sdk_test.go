@@ -1,7 +1,6 @@
 package sdk_test
 
 import (
-	"encoding/base64"
 	"encoding/hex"
 	sdk "github.com/BioforestChain/go-bfmeta-wallet-sdk"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
@@ -282,13 +281,31 @@ func TestBCFSignUtil_CreateKeypair(t *testing.T) {
 	log.Printf("bCFSignUtil_CreateKeypair= %#v\n", bCFSignUtil_CreateKeypair)
 }
 
+func TestBCFSignUtil_CreateKeypairBySecretKey(t *testing.T) {
+	bCFSignUtil_CreateKeypairBySecretKey, _ := bCFSignUtil.CreateKeypairBySecretKey([]byte("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"))
+	//bCFSignUtil_CreateKeypair= sdk.ResKeyPair{SecretKey:"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd", PublicKey:"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
+	//--- PASS: TestBCFSignUtil_CreateKeypairBySecretKey (0.01s)
+	log.Printf("bCFSignUtil_CreateKeypairBySecretKey= %#v\n", bCFSignUtil_CreateKeypairBySecretKey)
+}
+
+func TestBCFSignUtil_CreateKeypairBySecretKeyString(t *testing.T) {
+	got, _ := bCFSignUtil.CreateKeypairBySecretKeyString("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd")
+	//bCFSignUtil_CreateKeypairBySecretKeyString= sdk.ResKeyPair{SecretKey:"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd", PublicKey:"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
+	log.Printf("bCFSignUtil_CreateKeypairBySecretKeyString= %#v\n", got)
+}
+
+func TestBCFSignUtil_GetPublicKeyFromSecret(t *testing.T) {
+	bCFSignUtil_GetPublicKeyFromSecret, _ := bCFSignUtil.GetPublicKeyFromSecret("123456")
+	//bCFSignUtil_GetPublicKeyFromSecret= "0363649faf7a83d0bc0d9faa9c6a5efa8adc772190b8072210bc825895ca3570"
+	log.Printf("bCFSignUtil_GetPublicKeyFromSecret= %#v\n", bCFSignUtil_GetPublicKeyFromSecret)
+}
+
 // 根据公钥（Uint8Array）生成地址的二进制数据
-// todo
 func TestBCFSignUtil_GetBinaryAddressFromPublicKey(t *testing.T) {
 	var puk = "a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
 	got, _ := bCFSignUtil.GetBinaryAddressFromPublicKey([]byte(puk))
 	log.Printf("BinaryAddressFromPublicKey= %#v\n", got)
-	log.Printf("BinaryAddressFromPublicKey string = %#v\n", base64.StdEncoding.EncodeToString(got))
+	log.Printf("BinaryAddressFromPublicKey string = %#v\n", hex.EncodeToString(got))
 }
 
 func TestBCFSignUtil_GetAddressFromPublicKey(t *testing.T) {
@@ -338,6 +355,16 @@ func TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecret(t *testin
 	//GetSecondPublicKeyFromSecretAndSecondSecret= "bb3d939c1d91e95154c8ec5683e981865e0baa3cbaa25bd382f1bde5b693306d"
 	//--- PASS: TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecret (0.02s)
 	log.Printf("GetSecondPublicKeyFromSecretAndSecondSecret= %#v\n", got)
+}
+
+func TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecretV2(t *testing.T) {
+	var s = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
+	var ss = "12345678"
+	var encode = "" //非必传
+	got, _ := bCFSignUtil.GetSecondPublicKeyStringFromSecretAndSecondSecretV2(s, ss, encode)
+	//GetSecondPublicKeyStringFromSecretAndSecondSecretV2= "1bc79b077e3476354f845cf3879a1d9a6e3254f9866450ec5d6c00c83268319e"
+	//--- PASS: TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecretV2 (0.02s)
+	log.Printf("GetSecondPublicKeyStringFromSecretAndSecondSecretV2= %#v\n", got)
 }
 
 // 生成签名
@@ -399,4 +426,46 @@ func TestBCFSignUtil_AsymmetricDecrypt(t *testing.T) {
 	}
 	got, _ := bCFSignUtil.AsymmetricDecrypt(req)
 	log.Printf("AsymmetricDecrypt= %#v\n", got)
+}
+
+// checkSecondSecret
+// 校验二次密码公钥是否正确
+// Params:
+// secret – 主密码
+// secondSecret – 二次密码
+// secondPublicKey – 二次密码公钥
+func TestBCFSignUtil_CheckSecondSecret(t *testing.T) {
+	var secret, secondSecret, secondPublicKey = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd", "12345678", "bb3d939c1d91e95154c8ec5683e981865e0baa3cbaa25bd382f1bde5b693306d"
+	got, _ := bCFSignUtil.CheckSecondSecret(secret, secondSecret, secondPublicKey)
+	// CheckSecondSecret= true
+	log.Printf("CheckSecondSecret= %#v\n", got)
+}
+
+// checkSecondSecret
+// 校验二次密码公钥是否正确
+// Params:
+// secret – 主密码
+// secondSecret – 二次密码
+// secondPublicKey – 二次密码公钥
+func TestBCFSignUtil_CheckSecondSecretV2(t *testing.T) {
+	var secret, secondSecret, secondPublicKey = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd", "12345678", "bb3d939c1d91e95154c8ec5683e981865e0baa3cbaa25bd382f1bde5b693306d"
+	got, _ := bCFSignUtil.CheckSecondSecretV2(secret, secondSecret, secondPublicKey)
+	// CheckSecondSecretV2= true
+	log.Printf("CheckSecondSecretV2= %#v\n", got)
+
+}
+
+func TestBCFSignUtil_CreateSecondKeypairV2(t *testing.T) {
+	var secret, secondSecret = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd", "12345678"
+	got, _ := bCFSignUtil.CreateSecondKeypairV2(secret, secondSecret)
+	// createSecondKeypairV2= sdk.ResKeyPair{SecretKey:"645fc86050eaa146ee8c0117adfee3a7125580dd2978d1e6d4cbf35b8aa2b19e1bc79b077e3476354f845cf3879a1d9a6e3254f9866450ec5d6c00c83268319e", PublicKey:"1bc79b077e3476354f845cf3879a1d9a6e3254f9866450ec5d6c00c83268319e"}
+	log.Printf("createSecondKeypairV2= %#v\n", got)
+}
+
+func TestBCFSignUtil_GetSecondPublicKeyFromSecretAndSecondSecretV2(t *testing.T) {
+	var s = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
+	var ss = "12345678"
+	got, _ := bCFSignUtil.GetSecondPublicKeyFromSecretAndSecondSecretV2(s, ss)
+	//GetSecondPublicKeyFromSecretAndSecondSecretV2= sdk.ResPubKeyPair{PublicKey:"1bc79b077e3476354f845cf3879a1d9a6e3254f9866450ec5d6c00c83268319e"}
+	log.Printf("GetSecondPublicKeyFromSecretAndSecondSecretV2= %#v\n", got.PublicKey)
 }

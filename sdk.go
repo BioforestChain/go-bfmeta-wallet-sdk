@@ -240,7 +240,6 @@ func (sdk *BCFWalletSDK) NewBCFWallet(ip string, port int, browserPath string) *
 }
 
 func (sdk *BCFWalletSDK) NewBCFWalletSignUtil(ip string, port int, browserPath string) *BCFWallet {
-	//TODO
 	bfcWalletId, _ := nodeExec[int](sdk.nodeProcess, `{
 		const bfcwalletMap = (globalThis.bfcwalletMap??=new Map());
 		globalThis.bfcwalletIdAcc ??= 0
@@ -471,14 +470,67 @@ func (util *BCFSignUtil) CreateKeypair(secret string) (res ResKeyPair, err error
 	return res, err
 }
 
-// todo
+func (util *BCFSignUtil) CreateKeypairBySecretKey(secret []byte) (res ResKeyPair, err error) {
+	var keypair KeyPair
+	script := fmt.Sprintf(`{
+		const keypair = await globalThis.signUtilMap.get(%s).createKeypairBySecretKey(Buffer.from(%q,"hex"));
+		return {
+			secretKey:keypair.secretKey.toString("hex"),
+			publicKey:keypair.publicKey.toString("hex"),
+		}
+	}`, util.signUtilId, secret)
+	//SRC   {"secretKey":"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd","publicKey":"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
+	keypair, err = nodeExec[KeyPair](util.nodeProcess, script)
+	if err != nil {
+		log.Fatal("CreateKeypair err :", err)
+	}
+	// 将数据编码为 Base64 字符串
+	//res.SecretKey = base64.StdEncoding.EncodeToString(keypair.byteSecretKey)
+	//res.PublicKey = base64.StdEncoding.EncodeToString(keypair.bytePublicKey)
+	res.SecretKey = keypair.SecretKey
+	res.PublicKey = keypair.PublicKey
+	return res, err
+}
+
+func (util *BCFSignUtil) CreateKeypairBySecretKeyString(secret string) (res ResKeyPair, err error) {
+	var keypair KeyPair
+	script := fmt.Sprintf(`{
+		const keypair = await globalThis.signUtilMap.get(%s).createKeypairBySecretKeyString(%q);
+		return {
+			secretKey:keypair.secretKey.toString("hex"),
+			publicKey:keypair.publicKey.toString("hex"),
+		}
+	}`, util.signUtilId, secret)
+	//SRC   {"secretKey":"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd","publicKey":"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
+	keypair, err = nodeExec[KeyPair](util.nodeProcess, script)
+	if err != nil {
+		log.Fatal("CreateKeypair err :", err)
+	}
+	// 将数据编码为 Base64 字符串
+	//res.SecretKey = base64.StdEncoding.EncodeToString(keypair.byteSecretKey)
+	//res.PublicKey = base64.StdEncoding.EncodeToString(keypair.bytePublicKey)
+	res.SecretKey = keypair.SecretKey
+	res.PublicKey = keypair.PublicKey
+	return res, err
+}
+
+func (util *BCFSignUtil) GetPublicKeyFromSecret(secret string) (res string, err error) {
+	script := fmt.Sprintf(`(
+	await globalThis.signUtilMap.get(%s).getPublicKeyFromSecret(%q)
+)`, util.signUtilId, secret)
+	res, err = nodeExec[string](util.nodeProcess, script)
+	if err != nil {
+		log.Fatal("GetPublicKeyFromSecret err :", err)
+	}
+	return res, err
+}
+
 func (util *BCFSignUtil) GetBinaryAddressFromPublicKey(publicKey []byte) ([]byte, error) {
 	script := fmt.Sprintf(`(
 	await globalThis.signUtilMap.get(%s).getBinaryAddressFromPublicKey(Buffer.from(%q,"hex")))
 	.toString("hex")
-`, util.signUtilId, hex.EncodeToString(publicKey))
+`, util.signUtilId, publicKey)
 	binaryAddress, _ := nodeExec[string](util.nodeProcess, script)
-	fmt.Printf("binaryAddress %#v\n", binaryAddress)
 	if binaryAddress == "" {
 		return nil, errors.New("publicKey is invalid")
 	}
@@ -549,6 +601,46 @@ func (util *BCFSignUtil) GetSecondPublicKeyStringFromSecretAndSecondSecret(secre
 		return "", errors.New("secret or secondSecret or encode is invalid")
 	}
 	return got, nil
+}
+
+// 根据私钥获取公钥String
+func (util *BCFSignUtil) GetSecondPublicKeyStringFromSecretAndSecondSecretV2(secret, secondSecret, encode string) (string, error) {
+	var script string
+	if len(encode) > 0 {
+		script = fmt.Sprintf(`(
+		await globalThis.signUtilMap.get(%s)
+		.getSecondPublicKeyStringFromSecretAndSecondSecretV2(%q,%q,%q)
+)
+		.toString("hex")
+`, util.signUtilId, secret, secondSecret, encode)
+	} else {
+		script = fmt.Sprintf(`(
+		await globalThis.signUtilMap.get(%s)
+		.getSecondPublicKeyStringFromSecretAndSecondSecretV2(%q,%q)
+)
+		.toString("hex")
+`, util.signUtilId, secret, secondSecret)
+	}
+	got, _ := nodeExec[string](util.nodeProcess, script)
+	if got == "" {
+		return "", errors.New("secret or secondSecret or encode is invalid")
+	}
+	return got, nil
+}
+
+func (util *BCFSignUtil) GetSecondPublicKeyFromSecretAndSecondSecretV2(secret, secondSecret string) (res ResPubKeyPair, err error) {
+	script := fmt.Sprintf(`{
+		const got = await globalThis.signUtilMap.get(%s).getSecondPublicKeyFromSecretAndSecondSecretV2(%q,%q)
+		return {
+			publicKey:got.toString("hex")
+		}
+	}
+`, util.signUtilId, secret, secondSecret)
+	res, err = nodeExec[ResPubKeyPair](util.nodeProcess, script)
+	if err != nil {
+		return res, errors.New("secret or secondSecret is invalid")
+	}
+	return res, nil
 }
 
 func (util *BCFSignUtil) CreateSecondKeypair(secret, secondSecret string) (res ResKeyPair, err error) {
@@ -700,4 +792,56 @@ func (util *BCFSignUtil) AsymmetricDecrypt(req asymmetricDecrypt.Req) (res asymm
 		return res, err
 	}
 	return res, nil
+}
+
+// checkSecondSecret(secret: string, secondSecret: string, secondPublicKey: string): Promise<boolean>;
+func (util *BCFSignUtil) CheckSecondSecret(secret, secondSecret, secondPublicKey string) (res bool, err error) {
+	script := fmt.Sprintf(`(
+		await globalThis.signUtilMap.get(%s)
+		.checkSecondSecret(%q,%q,%q)
+)
+`, util.signUtilId, secret, secondSecret, secondPublicKey)
+	res, err = nodeExec[bool](util.nodeProcess, script)
+	if res == false {
+		return res, errors.New("secret or secondSecret or secondPublicKey is invalid")
+	}
+	return res, nil
+}
+
+// checkSecondSecret(secret: string, secondSecret: string, secondPublicKey: string): Promise<boolean>;
+func (util *BCFSignUtil) CheckSecondSecretV2(secret, secondSecret, secondPublicKey string) (res bool, err error) {
+	script := fmt.Sprintf(`(
+		await globalThis.signUtilMap.get(%s)
+		.checkSecondSecretV2(%q,%q,%q)
+)
+`, util.signUtilId, secret, secondSecret, secondPublicKey)
+	res, err = nodeExec[bool](util.nodeProcess, script)
+	if res == false {
+		return res, errors.New("secret or secondSecret or secondPublicKey is invalid")
+	}
+	return res, nil
+}
+
+// 根据安全密码的公私钥对
+// createSecondKeypairV2
+func (util *BCFSignUtil) CreateSecondKeypairV2(secret, secondSecret string) (res ResKeyPair, err error) {
+	var keypair KeyPair
+	script := fmt.Sprintf(`{
+		const keypair = await globalThis.signUtilMap.get(%s).createSecondKeypairV2(%q,%q);
+		return {
+			secretKey:keypair.secretKey.toString("hex"),
+			publicKey:keypair.publicKey.toString("hex"),
+		}
+	}`, util.signUtilId, secret, secondSecret)
+	//SRC   {"secretKey":"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd","publicKey":"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
+	keypair, err = nodeExec[KeyPair](util.nodeProcess, script)
+	if err != nil {
+		log.Fatal("CreateSecondKeypairV2 err :", err)
+	}
+	// 将数据编码为 Base64 字符串
+	//res.SecretKey = base64.StdEncoding.EncodeToString(keypair.byteSecretKey)
+	//res.PublicKey = base64.StdEncoding.EncodeToString(keypair.bytePublicKey)
+	res.SecretKey = keypair.SecretKey
+	res.PublicKey = keypair.PublicKey
+	return res, err
 }
