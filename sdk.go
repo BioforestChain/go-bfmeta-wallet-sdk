@@ -6,49 +6,47 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/accountAsset"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/address"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assetDetails"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assets"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/asymmetricDecrypt"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/block"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcast"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcastTra"
+	createAccountReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/createAccount"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/createTransferAsset"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/generateSecretReq"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/pkgTranscaction"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/transactions"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/accountAssetResp"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/accountResp"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/assetDetailsResp"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/assetsResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/asymmetricDecryptResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/asymmetricEncryptResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/blockResp"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/broadcastResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/broadcastResultResp"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/createAccountResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/createTransferAssetResp"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/generateSecretResp"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/lastBlockResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/pkgTranscactionResp"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/transactionsResp"
 	"io"
 	"log"
 	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
-
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/accountAsset"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/address"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assetDetails"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/assets"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcast"
-	createAccountReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/createAccount"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/createTransferAsset"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/generateSecretReq"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/transactions"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/accountAssetResp"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/accountResp"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/assetDetailsResp"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/assetsResp"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/broadcastResp"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/createAccountResp"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/generateSecretResp"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/lastBlockResp"
-	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/transactionsResp"
 )
 
 type Result struct {
 	Code    int    // 0 fail 1 success
 	Message string //
 }
-
 type NodeProcess struct {
 	ChannelMap sync.Map
 	Cmd        *exec.Cmd
@@ -60,17 +58,14 @@ type NodeProcess struct {
 
 func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 	command := exec.Command(cmd, args...)
-
 	stdin, err := command.StdinPipe()
 	if err != nil {
 		//panic(err)
 	}
-
 	stdout, err := command.StdoutPipe()
 	if err != nil {
 		//panic(err)
 	}
-
 	stderr, err := command.StderrPipe()
 	if err != nil {
 		//panic(err)
@@ -82,17 +77,11 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 		Stdout:     stdout,
 		Stderr:     stderr,
 	}
-
 	err = nodeProcess.Cmd.Start()
 	if err != nil {
 		fmt.Println("Failed to start process:", err)
 		panic(err)
 	}
-
-	//if err := cmd.Start(); err != nil {
-	//	fmt.Println("Error starting command:", err)
-	//	return
-	//}
 	// 在一个goroutine中读取stdout
 	var readLines = func(name string, reader io.Reader, resultCode int) {
 		scanner := bufio.NewReader(reader)
@@ -120,14 +109,12 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 				}
 				reqIDStr := result[0:idIndex]
 				resultData := result[idIndex+1:]
-
 				// 将req_id转换为整数
 				reqID, err := strconv.Atoi(reqIDStr)
 				if err != nil {
 					fmt.Println(name+" Invalid req_id:", reqIDStr)
 					continue
 				}
-
 				// 从map中获取并移除通道
 				if ch, ok := nodeProcess.ChannelMap.LoadAndDelete(reqID); ok {
 					channel := ch.(chan Result)
@@ -142,14 +129,7 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 	}
 	go readLines("stdout", nodeProcess.Stdout, 1)
 	go readLines("stderr", nodeProcess.Stderr, 0)
-
 	return nodeProcess
-}
-func (p *NodeProcess) CloseProcess() error {
-	//p.Stdin.Close()
-	//p.Cmd.Wait()
-	//return p.Cmd.Cancel()
-	return nil
 }
 
 type BCFWalletSDK struct {
@@ -160,7 +140,6 @@ type BCFWalletSDK struct {
 func (sdk *BCFWalletSDK) Close() error {
 	return sdk.nodeProcess.Cmd.Process.Kill()
 }
-
 func NewLocalBCFWalletSDK(debug bool) BCFWalletSDK {
 	// 启动Node.js进程
 	nodeProcess := newNodeProcess("node", []string{"--no-warnings", "./sdk.js"}, debug)
@@ -186,10 +165,7 @@ func NewBCFWalletSDK() BCFWalletSDK {
 		}
 		break
 	}
-
-	// 启动Node.js进程
 	nodeProcess := newNodeProcess(repl, []string{}, false)
-
 	return BCFWalletSDK{nodeProcess: nodeProcess}
 }
 
@@ -201,14 +177,12 @@ func nodeExec[T any](nodeProcess *NodeProcess, jsCode string) (T, error) {
 	req_id := reqIdAcc
 	channel := make(chan Result)
 	nodeProcess.ChannelMap.Store(req_id, channel)
-
 	var evalCode = fmt.Sprintf("await returnToGo(%d, async()=>%v)\r\n\n", req_id, jsCode)
 	//fmt.Println("evalCode", evalCode)
 	_, err := nodeProcess.Stdin.Write([]byte(evalCode))
 	if err != nil {
 		return res, err
 	}
-
 	result := <-channel
 	if result.Code == 1 {
 		err := json.Unmarshal([]byte(result.Message), &res)
@@ -238,7 +212,6 @@ func (sdk *BCFWalletSDK) NewBCFWallet(ip string, port int, browserPath string) *
 	}`)
 	return &BCFWallet{nodeProcess: sdk.nodeProcess, walletId: strconv.Itoa(bfcWalletId)}
 }
-
 func (sdk *BCFWalletSDK) NewBCFWalletSignUtil(ip string, port int, browserPath string) *BCFWallet {
 	bfcWalletId, _ := nodeExec[int](sdk.nodeProcess, `{
 		const bfcwalletMap = (globalThis.bfcwalletMap??=new Map());
@@ -270,8 +243,7 @@ func (wallet *BCFWallet) GetAddressBalance(req address.Params) (res BalanceResul
 	return res
 }
 
-/// baseApi
-
+// / baseApi
 func (wallet *BCFWallet) GetTransactionsByBrowser(req transactions.GetTransactionsParams) (resp transactionsResp.GetTransactionsByBrowserResult, err error) {
 	reqData, err := json.Marshal(req)
 	if err != nil {
@@ -281,14 +253,12 @@ func (wallet *BCFWallet) GetTransactionsByBrowser(req transactions.GetTransactio
 	resp, _ = nodeExec[transactionsResp.GetTransactionsByBrowserResult](wallet.nodeProcess, script)
 	return resp, nil
 }
-
 func (wallet *BCFWallet) GetAccountInfo(req account.GetAccountInfoParams) (resp accountResp.GetAccountInfoRespResult) {
 	resp, _ = nodeExec[accountResp.GetAccountInfoRespResult](wallet.nodeProcess, `
 		globalThis.bfcwalletMap.get(`+wallet.walletId+`).getAccountInfo("`+req.Address+`")
 	`)
 	return resp
 }
-
 func (wallet *BCFWallet) GetAccountAsset(req accountAsset.GetAccountAssetParams) (resp accountAssetResp.GetAccountAssetRespResult) {
 	resp, _ = nodeExec[accountAssetResp.GetAccountAssetRespResult](wallet.nodeProcess, `
 		globalThis.bfcwalletMap.get(`+wallet.walletId+`).getAccountAsset("`+req.Address+`")
@@ -304,7 +274,6 @@ func (wallet *BCFWallet) GetAssets(req assets.PaginationOptions) (resp assetsRes
 	resp, _ = nodeExec[assetsResp.GetAssetsRespResult](wallet.nodeProcess, script)
 	return resp
 }
-
 func (wallet *BCFWallet) GetAssetDetails(req assetDetails.Req) (resp assetDetailsResp.GetAssetDetailsRespResult) {
 	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).getAssetDetails(%q)`, wallet.walletId, req.AssetType)
 	resp, _ = nodeExec[assetDetailsResp.GetAssetDetailsRespResult](wallet.nodeProcess, script)
@@ -332,13 +301,11 @@ func (wallet *BCFWallet) GetBlock(req block.GetBlockParams) (resp blockResp.GetB
 	resp, _ = nodeExec[blockResp.GetBlockResultResp](wallet.nodeProcess, script)
 	return
 }
-
 func (wallet *BCFWallet) GetLastBlock() (resp lastBlockResp.GetLastBlockResultResp) {
 	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.basic.getLastBlock()`, wallet.walletId)
 	resp, _ = nodeExec[lastBlockResp.GetLastBlockResultResp](wallet.nodeProcess, script)
 	return
 }
-
 func (wallet *BCFWallet) GetTransactions(req transactions.GetTransactionsParams) (resp transactionsResp.GetTransactionsResult) {
 	reqData, err := json.Marshal(req)
 	if err != nil {
@@ -349,26 +316,18 @@ func (wallet *BCFWallet) GetTransactions(req transactions.GetTransactionsParams)
 	resp, _ = nodeExec[transactionsResp.GetTransactionsResult](wallet.nodeProcess, script)
 	return resp
 }
-
 func (wallet *BCFWallet) GenerateSecret(req generateSecretReq.GenerateSecretParams) (resp generateSecretResp.GenerateSecretRespResult) {
-	//reqData, err := json.Marshal(req)
-	//if err != nil {
-	//	fmt.Println("Error marshalling to JSON:", err)
-	//	return
-	//}
 	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.basic.generateSecret(%q)`, wallet.walletId, req.Lang)
 	resp, _ = nodeExec[generateSecretResp.GenerateSecretRespResult](wallet.nodeProcess, script)
 	return
 }
-
 func (wallet *BCFWallet) CreateAccount(req createAccountReq.CreateAccountReq) (resp createAccountResp.CreateAccountRespResult) {
 	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.basic.createAccount(%q)`, wallet.walletId, req.Secret)
 	resp, _ = nodeExec[createAccountResp.CreateAccountRespResult](wallet.nodeProcess, script)
 	return
 }
 
-/// transactionApis
-
+// / transactionApis
 func (wallet *BCFWallet) BroadcastCompleteTransaction(req broadcast.Params) (resp broadcastResp.BroadcastRespResult[any]) {
 	reqData, err := json.Marshal(req)
 	if err != nil {
@@ -379,9 +338,7 @@ func (wallet *BCFWallet) BroadcastCompleteTransaction(req broadcast.Params) (res
 	//        enable: true, host: [{ip: "34.84.178.63", port: 19503}], browserPath: "https://qapmapi.pmchainbox.com/browser",
 	//    });
 	//sdk.api.transaction.broadcastCompleteTransaction("{\"applyBlockHeight\":114208,\"asset\":{\"transferAsset\":{\"amount\":\"185184\",\"assetType\":\"PMC\",\"sourceChainMagic\":\"XXVXQ\",\"sourceChainName\":\"paymetachain\"}},\"effectiveBlockHeight\":114258,\"fee\":\"100000\",\"fromMagic\":\"\",\"range\":[],\"rangeType\":0,\"recipientId\":\"cFqv1tiifgYE6xbhZp43XxbZVJp363BWXt\",\"remark\":{\"orderId\":\"110b45fafcb84cb7a1de7eef5a957855\"},\"senderId\":\"c6C9ycTXrPBu8wXAGhUJHau678YyQwB2Mn\",\"senderPublicKey\":\"0d3c8003248cc4c71493dd67c0c433e75b7a191758df94fb0be5db2c6a94fecd\",\"signature\":\"2d0cea07ab73be6bdab258f12e7e0aa22776a8b9dd7b130f33fdd8fce6534cb0e29bc8d4983d3564178ae4189eedba80a864bda1a4ceb8b197e530ef1774ea07\",\"storageKey\":\"assetType\",\"storageValue\":\"PMC\",\"timestamp\":31839601,\"toMagic\":\"\",\"type\":\"PMC-PAYMETACHAIN-AST-02\",\"version\":1}"))
-
 	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.transaction.broadcastCompleteTransaction(JSON.parse(%q))`, wallet.walletId, string(reqData))
-	//fmt.Println("broadcastCompleteTransaction sc", script)
 	resp, _ = nodeExec[broadcastResp.BroadcastRespResult[any]](wallet.nodeProcess, script)
 	return
 }
@@ -442,7 +399,6 @@ type KeyPair struct {
 	bytePublicKey []byte `json:"bytePublicKey"`
 	PublicKey     string `json:"publicKey"`
 }
-
 type ResKeyPair struct {
 	SecretKey string `json:"secretKey,omitempty"`
 	PublicKey string `json:"publicKey,omitempty"`
@@ -469,7 +425,6 @@ func (util *BCFSignUtil) CreateKeypair(secret string) (res ResKeyPair, err error
 	res.PublicKey = keypair.PublicKey
 	return res, err
 }
-
 func (util *BCFSignUtil) CreateKeypairBySecretKey(secret []byte) (res ResKeyPair, err error) {
 	var keypair KeyPair
 	script := fmt.Sprintf(`{
@@ -491,7 +446,6 @@ func (util *BCFSignUtil) CreateKeypairBySecretKey(secret []byte) (res ResKeyPair
 	res.PublicKey = keypair.PublicKey
 	return res, err
 }
-
 func (util *BCFSignUtil) CreateKeypairBySecretKeyString(secret string) (res ResKeyPair, err error) {
 	var keypair KeyPair
 	script := fmt.Sprintf(`{
@@ -513,7 +467,6 @@ func (util *BCFSignUtil) CreateKeypairBySecretKeyString(secret string) (res ResK
 	res.PublicKey = keypair.PublicKey
 	return res, err
 }
-
 func (util *BCFSignUtil) GetPublicKeyFromSecret(secret string) (res string, err error) {
 	script := fmt.Sprintf(`(
 	await globalThis.signUtilMap.get(%s).getPublicKeyFromSecret(%q)
@@ -524,7 +477,6 @@ func (util *BCFSignUtil) GetPublicKeyFromSecret(secret string) (res string, err 
 	}
 	return res, err
 }
-
 func (util *BCFSignUtil) GetBinaryAddressFromPublicKey(publicKey []byte) ([]byte, error) {
 	script := fmt.Sprintf(`(
 	await globalThis.signUtilMap.get(%s).getBinaryAddressFromPublicKey(Buffer.from(%q,"hex")))
@@ -536,7 +488,6 @@ func (util *BCFSignUtil) GetBinaryAddressFromPublicKey(publicKey []byte) ([]byte
 	}
 	return hex.DecodeString(binaryAddress)
 }
-
 func (util *BCFSignUtil) GetAddressFromPublicKey(publicKey []byte, prefix string) (string, error) {
 	script := fmt.Sprintf(`(
 		await globalThis.signUtilMap.get(%s)
@@ -550,7 +501,6 @@ func (util *BCFSignUtil) GetAddressFromPublicKey(publicKey []byte, prefix string
 	}
 	return address, nil
 }
-
 func (util *BCFSignUtil) GetAddressFromPublicKeyString(publicKey, prefix string) (string, error) {
 	script := fmt.Sprintf(`(
 		await globalThis.signUtilMap.get(%s)
@@ -564,7 +514,6 @@ func (util *BCFSignUtil) GetAddressFromPublicKeyString(publicKey, prefix string)
 	}
 	return address, nil
 }
-
 func (util *BCFSignUtil) GetAddressFromSecret(secret string) (string, error) {
 	script := fmt.Sprintf(`(
 		await globalThis.signUtilMap.get(%s)
@@ -578,7 +527,6 @@ func (util *BCFSignUtil) GetAddressFromSecret(secret string) (string, error) {
 	}
 	return address, nil
 }
-
 func (util *BCFSignUtil) GetSecondPublicKeyStringFromSecretAndSecondSecret(secret, secondSecret, encode string) (string, error) {
 	var script string
 	if len(encode) > 0 {
@@ -627,7 +575,6 @@ func (util *BCFSignUtil) GetSecondPublicKeyStringFromSecretAndSecondSecretV2(sec
 	}
 	return got, nil
 }
-
 func (util *BCFSignUtil) GetSecondPublicKeyFromSecretAndSecondSecretV2(secret, secondSecret string) (res ResPubKeyPair, err error) {
 	script := fmt.Sprintf(`{
 		const got = await globalThis.signUtilMap.get(%s).getSecondPublicKeyFromSecretAndSecondSecretV2(%q,%q)
@@ -642,7 +589,6 @@ func (util *BCFSignUtil) GetSecondPublicKeyFromSecretAndSecondSecretV2(secret, s
 	}
 	return res, nil
 }
-
 func (util *BCFSignUtil) CreateSecondKeypair(secret, secondSecret string) (res ResKeyPair, err error) {
 	var keypair KeyPair
 	script := fmt.Sprintf(`{
@@ -686,9 +632,8 @@ func (util *BCFSignUtil) GetSecondPublicKeyFromSecretAndSecondSecret(secret, sec
 	return res, nil
 }
 
-///
-//const signature = (await bfmetaSDK.bfchainSignUtil.detachedSign(bytes, keypair.secretKey)).toString("hex");
-
+// /
+// const signature = (await bfmetaSDK.bfchainSignUtil.detachedSign(bytes, keypair.secretKey)).toString("hex");
 type ResSignToString struct {
 	Type string `json:"type,omitempty"`
 	Data []byte `json:"data,omitempty"`
@@ -707,7 +652,6 @@ func (util *BCFSignUtil) DetachedSign(msg, secretKey []byte) (res ResSignToStrin
 	}
 	return res, nil
 }
-
 func (util *BCFSignUtil) SignToString(msg, secretKey []byte) (string, error) {
 	script := fmt.Sprintf(`(
 		await globalThis.signUtilMap.get(%s)
@@ -756,7 +700,6 @@ func (util *BCFSignUtil) DetachedVeriy(message, signatureBuffer, publicKeyBuffer
 //encryptedMessage: Uint8Array;
 //nonce: Uint8Array;
 //};
-
 func (util *BCFSignUtil) AsymmetricEncrypt(msg, decryptPK, encryptSK []byte) (res asymmetricEncryptResp.ResAsymmetricEncrypt, err error) {
 	script := fmt.Sprintf(`{
 		const got = await globalThis.signUtilMap.get(%s).asymmetricEncrypt((Buffer.from(%q,"hex")),(Buffer.from(%q,"hex")),(Buffer.from(%q,"hex")));
