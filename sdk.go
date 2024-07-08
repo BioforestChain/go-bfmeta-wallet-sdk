@@ -404,23 +404,26 @@ type ResKeyPair struct {
 	PublicKey string `json:"publicKey,omitempty"`
 }
 
+// ts
+// Se 03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
+// Pu caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
+// go
+// Se 03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
+// Pu caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
 func (util *BCFSignUtil) CreateKeypair(secret string) (res ResKeyPair, err error) {
 	var keypair KeyPair
 	script := fmt.Sprintf(`{
 		const keypair = await globalThis.signUtilMap.get(%s).createKeypair(%q);
 		return {
-			secretKey:keypair.secretKey.toString("hex"),
-			publicKey:keypair.publicKey.toString("hex"),
+			SecretKey:keypair.secretKey.toString("hex"),
+			PublicKey:keypair.publicKey.toString("hex"),
 		}
 	}`, util.signUtilId, secret)
-	//SRC   {"secretKey":"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd","publicKey":"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
+
 	keypair, err = nodeExec[KeyPair](util.nodeProcess, script)
 	if err != nil {
 		log.Fatal("CreateKeypair err :", err)
 	}
-	// 将数据编码为 Base64 字符串
-	//res.SecretKey = base64.StdEncoding.EncodeToString(keypair.byteSecretKey)
-	//res.PublicKey = base64.StdEncoding.EncodeToString(keypair.bytePublicKey)
 	res.SecretKey = keypair.SecretKey
 	res.PublicKey = keypair.PublicKey
 	return res, err
@@ -460,9 +463,6 @@ func (util *BCFSignUtil) CreateKeypairBySecretKeyString(secret string) (res ResK
 	if err != nil {
 		log.Fatal("CreateKeypair err :", err)
 	}
-	// 将数据编码为 Base64 字符串
-	//res.SecretKey = base64.StdEncoding.EncodeToString(keypair.byteSecretKey)
-	//res.PublicKey = base64.StdEncoding.EncodeToString(keypair.bytePublicKey)
 	res.SecretKey = keypair.SecretKey
 	res.PublicKey = keypair.PublicKey
 	return res, err
@@ -501,6 +501,9 @@ func (util *BCFSignUtil) GetAddressFromPublicKey(publicKey []byte, prefix string
 	}
 	return address, nil
 }
+
+// Se 03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
+// Pu caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
 func (util *BCFSignUtil) GetAddressFromPublicKeyString(publicKey, prefix string) (string, error) {
 	script := fmt.Sprintf(`(
 		await globalThis.signUtilMap.get(%s)
@@ -641,7 +644,7 @@ type ResSignToString struct {
 
 func (util *BCFSignUtil) DetachedSign(msg, secretKey []byte) (res ResSignToString, err error) {
 	script := fmt.Sprintf(`{
-		const got = await globalThis.signUtilMap.get(%s).detachedSign(Buffer.from(%q,"base64"),Buffer.from(%q,"hex"));
+		const got = await globalThis.signUtilMap.get(%s).detachedSign(Buffer.from(%q),Buffer.from(%q,"hex"));
 		console.log("DetachedSign got to str",got.toString("hex"));
 		return got;
 }
@@ -652,12 +655,13 @@ func (util *BCFSignUtil) DetachedSign(msg, secretKey []byte) (res ResSignToStrin
 	}
 	return res, nil
 }
-func (util *BCFSignUtil) SignToString(msg, secretKey []byte) (string, error) {
+
+// 签名并且转成 hex 字符串 dd32b50516cfef985d629bab795b63f66fdcb37f0d267e730db113bcc08d9c3cc90a589080c703f9e7181105276410ee18c9c4d74b311f1ae095716305afdf07
+func (util *BCFSignUtil) SignToString(msg string, secretKey []byte) (string, error) {
 	script := fmt.Sprintf(`(
 		await globalThis.signUtilMap.get(%s)
-		.signToString(Buffer.from(%q,"hex"),Buffer.from(%q,"hex"))
+		.signToString(Buffer.from(%q),Buffer.from(%q,"hex"))
 )
-		
 `, util.signUtilId, msg, secretKey)
 	got, _ := nodeExec[string](util.nodeProcess, script)
 	if got == "" {
@@ -679,7 +683,7 @@ func (util *BCFSignUtil) SignToString(msg, secretKey []byte) (string, error) {
 func (util *BCFSignUtil) DetachedVeriy(message, signatureBuffer, publicKeyBuffer []byte) (res bool, err error) {
 	script := fmt.Sprintf(`(
 		await globalThis.signUtilMap.get(%s)
-		.detachedVeriy(Buffer.from(%q,"hex"),Buffer.from(%q,"hex"),Buffer.from(%q,"hex"))
+		.detachedVeriy(Buffer.from(%q),Buffer.from(%q,"hex"),Buffer.from(%q,"hex"))
 )
 `, util.signUtilId, message, signatureBuffer, publicKeyBuffer)
 	res, err = nodeExec[bool](util.nodeProcess, script)
