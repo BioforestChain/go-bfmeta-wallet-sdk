@@ -494,7 +494,7 @@ func (util *BCFSignUtil) GetAddressFromPublicKey(publicKey []byte, prefix string
 		.getAddressFromPublicKey(Buffer.from(%q,"hex"),%q)
 )
 		.toString("hex")
-`, util.signUtilId, hex.EncodeToString(publicKey), prefix)
+`, util.signUtilId, publicKey, prefix)
 	address, _ := nodeExec[string](util.nodeProcess, script)
 	if address == "" {
 		return "", errors.New("publicKey is invalid")
