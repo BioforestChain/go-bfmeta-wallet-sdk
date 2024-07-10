@@ -223,27 +223,19 @@ func TestBroadcastCompleteTransaction(t *testing.T) {
 
 // Se 03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
 // Pu caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
-var Msg = "1234"
-var Sek = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc"
-var Pubk = "caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc"
 
 func TestBroadcastTransferAsset(t *testing.T) {
 	//助记词
-	var word = "123"
+	var word = "1234"
 	bCFSignUtil_CreateKeypair, _ := bCFSignUtil.CreateKeypair(word)
-	//bCFSignUtil_CreateKeypair.SecretKey
 	var s = []byte(word)
-	//var ss = []byte("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd")
 	var ss = []byte(bCFSignUtil_CreateKeypair.SecretKey)
 	got, _ := bCFSignUtil.DetachedSign(s, ss)
 	log.Printf("DetachedSign srcType= %#v\n", got.Type)
 	log.Printf("DetachedSign srcData= %#v\n", got.Data)
 	sign := hex.EncodeToString(got.Data)
-	//buffer createTransferAssetResp.Result.Buffer 取得..
 	req := broadcastTra.BroadcastTransactionParams{
-		//Signature: "801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02",
 		Signature: sign,
-		//SignSignature: "exampleSignSignature",
 		Buffer:    "string",
 		IsOnChain: true,
 	}
@@ -279,14 +271,6 @@ func TestPackageTransferAsset(t *testing.T) {
 	log.Printf("pkgTransferAssetResp= %#v\n", pkgTransferAssetResp)
 }
 
-// 获取 SecretKey
-// 获取 PublicKey
-// sdk.ResKeyPair{SecretKey:"03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc", PublicKey:"caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc"}
-func TestBCFSignUtil_CreateKeypair(t *testing.T) {
-	bCFSignUtil_CreateKeypair, _ := bCFSignUtil.CreateKeypair("1234")
-	log.Printf("bCFSignUtil_CreateKeypair= %#v\n", bCFSignUtil_CreateKeypair)
-}
-
 func TestBCFSignUtil_CreateKeypairBySecretKey(t *testing.T) {
 	bCFSignUtil_CreateKeypairBySecretKey, _ := bCFSignUtil.CreateKeypairBySecretKey([]byte("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"))
 	//bCFSignUtil_CreateKeypair= sdk.ResKeyPair{SecretKey:"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd", PublicKey:"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
@@ -312,31 +296,6 @@ func TestBCFSignUtil_GetBinaryAddressFromPublicKey(t *testing.T) {
 	got, _ := bCFSignUtil.GetBinaryAddressFromPublicKey([]byte(puk))
 	log.Printf("BinaryAddressFromPublicKey= %#v\n", got)
 	log.Printf("BinaryAddressFromPublicKey string = %#v\n", hex.EncodeToString(got))
-}
-
-func TestBCFSignUtil_GetAddressFromPublicKey(t *testing.T) {
-	var puk = "a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
-	var prefix = "c" //非必传
-	got, _ := bCFSignUtil.GetAddressFromPublicKey([]byte(puk), prefix)
-	//cJsyQNoMxvS1uMkjXv52JQi8X8VzyFCzCR
-	log.Printf("AddressFromPublicKey= %#v\n", got)
-}
-
-// Se 03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
-// Pu caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
-func TestBCFSignUtil_GetAddressFromPublicKeyString(t *testing.T) {
-	var puk = "caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc"
-	var prefix = "c" //非必传
-	got, _ := bCFSignUtil.GetAddressFromPublicKeyString(puk, prefix)
-	//got : cBUgBpP3mbJbVi7c9tYM8KJ7cd5Pgi5fmM
-	log.Printf("AddressFromPublicKey= %#v\n", got)
-}
-
-func TestBCFSignUtil_GetAddressFromSecret(t *testing.T) {
-	var s = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
-	got, _ := bCFSignUtil.GetAddressFromSecret(s)
-	//cH2yHDdwZ7ZRtcC8L4YoV3kHtRWzi9aoxR
-	log.Printf("AddressFromSecret= %#v\n", got)
 }
 
 func TestBCFSignUtil_CreateSecondKeypair(t *testing.T) {
@@ -373,43 +332,6 @@ func TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecretV2(t *test
 	//GetSecondPublicKeyStringFromSecretAndSecondSecretV2= "1bc79b077e3476354f845cf3879a1d9a6e3254f9866450ec5d6c00c83268319e"
 	//--- PASS: TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecretV2 (0.02s)
 	log.Printf("GetSecondPublicKeyStringFromSecretAndSecondSecretV2= %#v\n", got)
-}
-
-// 生成签名
-func TestBCFSignUtil_DetachedSign(t *testing.T) {
-	var s = []byte("1234")
-	var ss = []byte(Sek)
-	got, _ := bCFSignUtil.DetachedSign(s, ss)
-	log.Printf("DetachedSign srcType= %#v\n", got.Type)
-	log.Printf("DetachedSign srcData= %#v\n", got.Data)
-
-	sign := hex.EncodeToString(got.Data)
-	log.Printf("DetachedSign= %#v\n", sign)
-}
-
-/**
- * 签名并且转成 hex 字符串
- *
- * @param message
- * @param secretKey
- * @returns
- */
-//signToString(message: Uint8Array, secretKey: Uint8Array): Promise<string>;
-func TestBCFSignUtil_SignToString(t *testing.T) {
-	msg := "1234"
-	secretKey := []byte("03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc")
-	got, _ := bCFSignUtil.SignToString(msg, secretKey)
-	log.Printf("SignToString= %#v\n", got)
-}
-
-func TestBCFSignUtil_DetachedVeriy(t *testing.T) {
-	var message = []byte(Msg)
-	var signatureBuffer = []byte("dd32b50516cfef985d629bab795b63f66fdcb37f0d267e730db113bcc08d9c3cc90a589080c703f9e7181105276410ee18c9c4d74b311f1ae095716305afdf07")
-	var publicKeyBuffer = []byte(Pubk)
-
-	got, _ := bCFSignUtil.DetachedVeriy(message, signatureBuffer, publicKeyBuffer)
-	//DetachedSign= "801e19ac714803ca50d53ba802667adc99f82c21bf4b5dfbbfd0c4b766103af1cf6c56944124bd9f219b1910135469796b817fefe5abb01aabc8df8772495a02"
-	log.Printf("SignToString= %#v\n", got)
 }
 
 func TestBCFSignUtil_AsymmetricEncrypt(t *testing.T) {
