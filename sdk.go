@@ -6,6 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"os/exec"
+	"strconv"
+	"strings"
+	"sync"
+
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/accountAsset"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/address"
@@ -35,12 +42,6 @@ import (
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/lastBlockResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/pkgTranscactionResp"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/resp/transactionsResp"
-	"io"
-	"log"
-	"os/exec"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 type Result struct {
@@ -91,6 +92,9 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 				if err == io.EOF {
 					break
 				}
+				if strings.Contains(err.Error(), "file already closed") {
+					break
+				}
 				fmt.Println(name+" read line error:", err)
 				continue
 			}
@@ -138,7 +142,11 @@ type BCFWalletSDK struct {
 }
 
 func (sdk *BCFWalletSDK) Close() error {
-	return sdk.nodeProcess.Cmd.Process.Kill()
+	err := sdk.nodeProcess.Cmd.Process.Kill()
+	sdk.nodeProcess.Stdout.Close()
+	sdk.nodeProcess.Stderr.Close()
+	sdk.nodeProcess.Stdin.Close()
+	return err
 }
 func NewLocalBCFWalletSDK(debug bool) BCFWalletSDK {
 	// 启动Node.js进程

@@ -2,6 +2,10 @@ package sdk_test
 
 import (
 	"encoding/hex"
+	"log"
+	"testing"
+	"time"
+
 	sdk "github.com/BioforestChain/go-bfmeta-wallet-sdk"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
 	accountAssetEntityReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/accountAsset"
@@ -17,8 +21,6 @@ import (
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/generateSecretReq"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/pkgTranscaction"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/transactions"
-	"log"
-	"testing"
 )
 
 var sdkClient = sdk.NewLocalBCFWalletSDK(true)
@@ -395,4 +397,26 @@ func TestBCFSignUtil_GetSecondPublicKeyFromSecretAndSecondSecretV2(t *testing.T)
 	got, _ := bCFSignUtil.GetSecondPublicKeyFromSecretAndSecondSecretV2(s, ss)
 	//GetSecondPublicKeyFromSecretAndSecondSecretV2= sdk.ResPubKeyPair{PublicKey:"1bc79b077e3476354f845cf3879a1d9a6e3254f9866450ec5d6c00c83268319e"}
 	log.Printf("GetSecondPublicKeyFromSecretAndSecondSecretV2= %#v\n", got.PublicKey)
+}
+
+func TestMultiSdk(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		_singleSdk(t)
+	}
+	for i := 0; i < 20; i++ {
+		time.Sleep(1 * time.Second)
+		log.Printf("look~~ %d", i)
+	}
+}
+func _singleSdk(t *testing.T) {
+	var sdkClient = sdk.NewLocalBCFWalletSDK(true)
+	var bCFSignUtil = sdkClient.NewBCFSignUtil("c")
+	defer sdkClient.Close()
+
+	var msg = []byte(Msg)
+	var byteSecretKey = []byte(SecretKey)
+	var signatureBuffer = []byte(detachedSign(msg, byteSecretKey))
+	var publicKeyBuffer = []byte(PubKey)
+	got, _ := bCFSignUtil.DetachedVeriy(msg, signatureBuffer, publicKeyBuffer)
+	log.Printf("DetachedVeriy= %#v\n", got)
 }
