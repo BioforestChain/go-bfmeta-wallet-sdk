@@ -209,8 +209,8 @@ func TestBroadcastCompleteTransaction(t *testing.T) {
 		},
 		"rangeType": 0,
 		"range":     []string{},
-		"fromMagic": "",
-		"toMagic":   "",
+		"fromMagic": "xxx",
+		"toMagic":   "zzz",
 		"remark": map[string]string{
 			"orderId": "110b45fafcb84cb7a1de7eef5a957855",
 		},
@@ -219,7 +219,7 @@ func TestBroadcastCompleteTransaction(t *testing.T) {
 		"storageValue": "PMC",
 		//"key1":       []string{"item1", "item2"},
 	}
-	bCTResp := wallet.BroadcastCompleteTransaction(reqBroadcastCompleteTransaction)
+	bCTResp, _ := wallet.BroadcastCompleteTransaction(reqBroadcastCompleteTransaction)
 	log.Printf("bCTResp= %#v\n", bCTResp)
 }
 

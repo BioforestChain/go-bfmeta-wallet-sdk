@@ -336,7 +336,7 @@ func (wallet *BCFWallet) CreateAccount(req createAccountReq.CreateAccountReq) (r
 }
 
 // / transactionApis
-func (wallet *BCFWallet) BroadcastCompleteTransaction(req broadcast.Params) (resp broadcastResp.BroadcastRespResult[any]) {
+func (wallet *BCFWallet) BroadcastCompleteTransaction(req broadcast.Params) (resp broadcastResp.BroadcastRespResult[any], err error) {
 	reqData, err := json.Marshal(req)
 	if err != nil {
 		fmt.Println("Error marshalling to JSON:", err)
@@ -347,7 +347,7 @@ func (wallet *BCFWallet) BroadcastCompleteTransaction(req broadcast.Params) (res
 	//    });
 	//sdk.api.transaction.broadcastCompleteTransaction("{\"applyBlockHeight\":114208,\"asset\":{\"transferAsset\":{\"amount\":\"185184\",\"assetType\":\"PMC\",\"sourceChainMagic\":\"XXVXQ\",\"sourceChainName\":\"paymetachain\"}},\"effectiveBlockHeight\":114258,\"fee\":\"100000\",\"fromMagic\":\"\",\"range\":[],\"rangeType\":0,\"recipientId\":\"cFqv1tiifgYE6xbhZp43XxbZVJp363BWXt\",\"remark\":{\"orderId\":\"110b45fafcb84cb7a1de7eef5a957855\"},\"senderId\":\"c6C9ycTXrPBu8wXAGhUJHau678YyQwB2Mn\",\"senderPublicKey\":\"0d3c8003248cc4c71493dd67c0c433e75b7a191758df94fb0be5db2c6a94fecd\",\"signature\":\"2d0cea07ab73be6bdab258f12e7e0aa22776a8b9dd7b130f33fdd8fce6534cb0e29bc8d4983d3564178ae4189eedba80a864bda1a4ceb8b197e530ef1774ea07\",\"storageKey\":\"assetType\",\"storageValue\":\"PMC\",\"timestamp\":31839601,\"toMagic\":\"\",\"type\":\"PMC-PAYMETACHAIN-AST-02\",\"version\":1}"))
 	script := fmt.Sprintf(`globalThis.bfcwalletMap.get(%s).sdk.api.transaction.broadcastCompleteTransaction(JSON.parse(%q))`, wallet.walletId, string(reqData))
-	resp, _ = nodeExec[broadcastResp.BroadcastRespResult[any]](wallet.nodeProcess, script)
+	resp, err = nodeExec[broadcastResp.BroadcastRespResult[any]](wallet.nodeProcess, script)
 	return
 }
 func (wallet *BCFWallet) CreateTransferAsset(req createTransferAsset.TransferAssetTransactionParams) (result createTransferAssetResp.CreateResult, err error) {
