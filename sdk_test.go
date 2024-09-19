@@ -232,13 +232,10 @@ func TestBroadcastTransferAsset(t *testing.T) {
 	bCFSignUtil_CreateKeypair, _ := bCFSignUtil.CreateKeypair(word)
 	var s = []byte(word)
 	var ss = []byte(bCFSignUtil_CreateKeypair.SecretKey)
-	got, _ := bCFSignUtil.DetachedSign(s, ss)
-	log.Printf("DetachedSign srcType= %#v\n", got.Type)
-	log.Printf("DetachedSign srcData= %#v\n", got.Data)
-	sign := hex.EncodeToString(got.Data)
+	sign, _ := bCFSignUtil.DetachedSignToHex(s, ss)
 	req := broadcastTra.BroadcastTransactionParams{
 		Signature: sign,
-		Buffer:    "string",
+		Buffer:    "\"{}\"",
 		IsOnChain: true,
 	}
 	broadcastTransferAsset, _ := wallet.BroadcastTransferAsset(req)

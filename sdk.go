@@ -650,18 +650,32 @@ type ResSignToString struct {
 	Data []byte `json:"data,omitempty"`
 }
 
-func (util *BCFSignUtil) DetachedSign(msg, secretKey []byte) (res ResSignToString, err error) {
+func (util *BCFSignUtil) DetachedSignToHex(msg, secretKey []byte) (res string, err error) {
 	script := fmt.Sprintf(`{
 		const got = await globalThis.signUtilMap.get(%s).detachedSign(Buffer.from(%q),Buffer.from(%q,"hex"));
 		console.log("DetachedSign got to str",got.toString("hex"));
-		return got;
+		return got.toString("hex");
 }
 `, util.signUtilId, msg, secretKey)
-	res, _ = nodeExec[ResSignToString](util.nodeProcess, script)
-	if len(res.Data) == 0 {
-		return res, errors.New("msg or secretKey is invalid")
+	res, err = nodeExec[string](util.nodeProcess, script)
+	if err != nil {
+		return
 	}
-	return res, nil
+	return
+}
+func (util *BCFSignUtil) DetachedSign(msg, secretKey []byte) (res []byte, err error) {
+	resHex, err := util.DetachedSignToHex(msg, secretKey)
+	if err != nil {
+		return
+	}
+	res, err = hex.DecodeString(resHex)
+	if err != nil {
+		return
+	}
+	if len(res) == 0 {
+		err = errors.New("msg or secretKey is invalid")
+	}
+	return
 }
 
 // 签名并且转成 hex 字符串 dd32b50516cfef985d629bab795b63f66fdcb37f0d267e730db113bcc08d9c3cc90a589080c703f9e7181105276410ee18c9c4d74b311f1ae095716305afdf07

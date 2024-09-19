@@ -1,7 +1,6 @@
 package sdk_test
 
 import (
-	"encoding/hex"
 	"log"
 	"testing"
 )
@@ -39,10 +38,10 @@ func TestBCFSignUtil_DetachedSign(t *testing.T) {
 }
 
 func detachedSign(msg, secretKey []byte) string {
-	got, _ := bCFSignUtil.DetachedSign(msg, secretKey)
-	log.Printf("DetachedSign srcType= %#v\n", got.Type)
-	log.Printf("DetachedSign srcData= %#v\n", got.Data)
-	sign := hex.EncodeToString(got.Data)
+	sign, err := bCFSignUtil.DetachedSignToHex(msg, secretKey)
+	if err != nil {
+		panic(err)
+	}
 	return sign
 }
 
