@@ -1,5 +1,7 @@
 package createTransferAsset
 
+import "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/jbase"
+
 // KVStorageInfo 结构定义
 type KVStorageInfo struct {
 	Key      string   `json:"key"`
@@ -14,22 +16,22 @@ type FileInfo struct {
 
 // TransactionCommonParams 定义
 type TransactionCommonParams struct {
-	PublicKey               string            `json:"publicKey"`
-	SecondPublicKey         string            `json:"secondPublicKey,omitempty"`
-	RecipientId             string            `json:"recipientId,omitempty"`
-	RangeType               int               `json:"rangeType,omitempty"`
-	Range                   []string          `json:"range,omitempty"`
-	Fee                     string            `json:"fee"`
-	ApplyBlockHeight        int               `json:"applyBlockHeight"`
-	Remark                  map[string]string `json:"remark,omitempty"`
-	Dappid                  string            `json:"dappid,omitempty"`
-	Lns                     string            `json:"lns,omitempty"`
-	SourceIP                string            `json:"sourceIP,omitempty"`
-	FromMagic               string            `json:"fromMagic,omitempty"`
-	ToMagic                 string            `json:"toMagic,omitempty"`
-	NumberOfEffectiveBlocks int               `json:"numberOfEffectiveBlocks,omitempty"`
-	BinaryInfos             []KVStorageInfo   `json:"binaryInfos,omitempty"`
-	Timestamp               int64             `json:"timestamp,omitempty"`
+	PublicKey               jbase.HexStringBuffer `json:"publicKey"`
+	SecondPublicKey         jbase.HexStringBuffer `json:"secondPublicKey,omitempty"`
+	RecipientId             string                `json:"recipientId,omitempty"`
+	RangeType               int                   `json:"rangeType,omitempty"`
+	Range                   []string              `json:"range,omitempty"`
+	Fee                     string                `json:"fee"`
+	ApplyBlockHeight        int                   `json:"applyBlockHeight"`
+	Remark                  map[string]string     `json:"remark,omitempty"`
+	Dappid                  string                `json:"dappid,omitempty"`
+	Lns                     string                `json:"lns,omitempty"`
+	SourceIP                string                `json:"sourceIP,omitempty"`
+	FromMagic               string                `json:"fromMagic,omitempty"`
+	ToMagic                 string                `json:"toMagic,omitempty"`
+	NumberOfEffectiveBlocks int                   `json:"numberOfEffectiveBlocks,omitempty"`
+	BinaryInfos             []KVStorageInfo       `json:"binaryInfos,omitempty"`
+	Timestamp               int64                 `json:"timestamp,omitempty"`
 }
 
 // TransactionCommonParamsWithRecipientId 定义

@@ -1,5 +1,7 @@
 package blockResp
 
+import "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/jbase"
+
 type GetBlockResultResp struct {
 	Success bool           `json:"success"`
 	Result  GetBlockResult `json:"result"`
@@ -53,12 +55,12 @@ type BlockWithoutTransactionJSON struct {
 	Height                        int                           `json:"height"`
 	BlockSize                     int                           `json:"blockSize"`
 	Timestamp                     int                           `json:"timestamp"`
-	Signature                     string                        `json:"signature"`
-	SignSignature                 string                        `json:"signSignature,omitempty"`
-	GeneratorPublicKey            string                        `json:"generatorPublicKey"`
-	GeneratorSecondPublicKey      string                        `json:"generatorSecondPublicKey,omitempty"`
+	Signature                     jbase.HexStringBuffer         `json:"signature"`
+	SignSignature                 jbase.HexStringBuffer         `json:"signSignature,omitempty"`
+	GeneratorPublicKey            jbase.HexStringBuffer         `json:"generatorPublicKey"`
+	GeneratorSecondPublicKey      jbase.HexStringBuffer         `json:"generatorSecondPublicKey,omitempty"`
 	GeneratorEquity               string                        `json:"generatorEquity"`
-	PreviousBlockSignature        string                        `json:"previousBlockSignature"`
+	PreviousBlockSignature        jbase.HexStringBuffer         `json:"previousBlockSignature"`
 	Reward                        string                        `json:"reward"`
 	Magic                         string                        `json:"magic"`
 	BlockParticipation            string                        `json:"blockParticipation"`
@@ -75,8 +77,8 @@ type TransactionJSON[AssetJSON any] struct {
 	Version               int                     `json:"version"`
 	Type                  string                  `json:"type"`
 	SenderId              string                  `json:"senderId"`
-	SenderPublicKey       string                  `json:"senderPublicKey"`
-	SenderSecondPublicKey *string                 `json:"senderSecondPublicKey,omitempty"`
+	SenderPublicKey       jbase.HexStringBuffer   `json:"senderPublicKey"`
+	SenderSecondPublicKey jbase.HexStringBuffer   `json:"senderSecondPublicKey,omitempty"`
 	RecipientId           *string                 `json:"recipientId,omitempty"`
 	RangeType             int                     `json:"rangeType"`
 	Range                 []string                `json:"range"`
@@ -89,8 +91,8 @@ type TransactionJSON[AssetJSON any] struct {
 	ToMagic               string                  `json:"toMagic"`
 	ApplyBlockHeight      int                     `json:"applyBlockHeight"`
 	EffectiveBlockHeight  int                     `json:"effectiveBlockHeight"`
-	Signature             string                  `json:"signature"`
-	SignSignature         *string                 `json:"signSignature,omitempty"`
+	Signature             jbase.HexStringBuffer   `json:"signature"`
+	SignSignature         jbase.HexStringBuffer   `json:"signSignature,omitempty"`
 	Remark                map[string]string       `json:"remark"`
 	Asset                 AssetJSON               `json:"asset"`
 	Storage               *TransactionStorageJSON `json:"storage,omitempty"`

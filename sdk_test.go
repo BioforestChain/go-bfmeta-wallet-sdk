@@ -7,6 +7,7 @@ import (
 	"time"
 
 	sdk "github.com/BioforestChain/go-bfmeta-wallet-sdk"
+	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/jbase"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/account"
 	accountAssetEntityReq "github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/accountAsset"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/address"
@@ -33,9 +34,9 @@ var bCFSignUtil = sdkClient.NewBCFSignUtil("c")
 func TestSdk(t *testing.T) {
 	//getAddressBalance
 	p := address.Params{
-		"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
-		"XXVXQ",
-		"PMC",
+		Address:   "cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
+		Magic:     "XXVXQ",
+		AssetType: "PMC",
 	}
 	balance := wallet.GetAddressBalance(p)
 	log.Printf("balance= %#v\n", balance)
@@ -228,14 +229,12 @@ func TestBroadcastCompleteTransaction(t *testing.T) {
 
 func TestBroadcastTransferAsset(t *testing.T) {
 	//助记词
-	var word = "1234"
-	bCFSignUtil_CreateKeypair, _ := bCFSignUtil.CreateKeypair(word)
-	var s = []byte(word)
-	var ss = []byte(bCFSignUtil_CreateKeypair.SecretKey)
-	sign, _ := bCFSignUtil.DetachedSignToHex(s, ss)
+	bCFSignUtil_CreateKeypair, _ := bCFSignUtil.CreateKeypair(Secret)
+	buffer := jbase.NewBase64StringBuffer("123456")
+	sign, _ := bCFSignUtil.DetachedSign(buffer.StringBuffer, bCFSignUtil_CreateKeypair.SecretKey.StringBuffer)
 	req := broadcastTra.BroadcastTransactionParams{
 		Signature: sign,
-		Buffer:    "\"{}\"",
+		Buffer:    *buffer,
 		IsOnChain: true,
 	}
 	broadcastTransferAsset, _ := wallet.BroadcastTransferAsset(req)
@@ -246,7 +245,7 @@ func TestCreateTransferAsset(t *testing.T) {
 	reqCreateTransferAsset := createTransferAsset.TransferAssetTransactionParams{
 		TransactionCommonParamsWithRecipientId: createTransferAsset.TransactionCommonParamsWithRecipientId{
 			TransactionCommonParams: createTransferAsset.TransactionCommonParams{
-				PublicKey:        "examplePublicKey",
+				PublicKey:        *PubKey,
 				Fee:              "0.1",
 				ApplyBlockHeight: 100,
 			},
@@ -410,10 +409,7 @@ func _singleSdk(t *testing.T) {
 	var bCFSignUtil = sdkClient.NewBCFSignUtil("c")
 	defer sdkClient.Close()
 
-	var msg = []byte(Msg)
-	var byteSecretKey = []byte(SecretKey)
-	var signatureBuffer = []byte(detachedSign(msg, byteSecretKey))
-	var publicKeyBuffer = []byte(PubKey)
-	got, _ := bCFSignUtil.DetachedVeriy(msg, signatureBuffer, publicKeyBuffer)
+	var signature, _ = bCFSignUtil.DetachedSign(Msg.StringBuffer, SecretKey.StringBuffer)
+	got, _ := bCFSignUtil.DetachedVeriy(Msg.StringBuffer, signature.StringBuffer, PubKey.StringBuffer)
 	log.Printf("DetachedVeriy= %#v\n", got)
 }

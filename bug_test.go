@@ -1,6 +1,8 @@
 package sdk_test
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"testing"
 
@@ -10,10 +12,14 @@ import (
 )
 
 var bugSdkClient = sdk.NewLocalBCFWalletSDK(true)
+
 var bugBCFSignUtil = bugSdkClient.NewBCFSignUtil("b")
 var bugWallet = bugSdkClient.NewBCFWallet("35.213.66.234", 30003, "https://tracker.biw-meta.info/browser")
 
-func sendTransactionBiw(secret string, toAddr string, toAmount string) (bool, error) {
+// var bugBCFSignUtil = bugSdkClient.NewBCFSignUtil("c")
+// var bugWallet = bugSdkClient.NewBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
+
+func sendTransactionBiw(t *testing.T, secret string, toAddr string, toAmount string) (success bool, err error) {
 	bCFSignUtilCreateKeypair, _ := bugBCFSignUtil.CreateKeypair(secret)
 
 	reqCreateTransferAsset := createTransferAsset.TransferAssetTransactionParams{
@@ -27,12 +33,16 @@ func sendTransactionBiw(secret string, toAddr string, toAmount string) (bool, er
 		},
 		Amount: toAmount,
 	}
+	reqCreateTransferAssetJson, _ := json.Marshal(reqCreateTransferAsset)
+	log.Printf("reqCreateTransferAsset=%s", reqCreateTransferAssetJson)
 	createTransferAssetResp, _ := bugWallet.CreateTransferAsset(reqCreateTransferAsset)
+	if !createTransferAssetResp.Success {
+		t.Errorf("createTransferAsset error=%v", createTransferAssetResp.Error)
+		return false, nil
+	}
 
 	//// 3.3 生成签名
-	var s1 = []byte(createTransferAssetResp.Result.Buffer)
-	var ss = []byte(bCFSignUtilCreateKeypair.SecretKey)
-	detachedSign, _ := bugBCFSignUtil.DetachedSignToHex(s1, ss)
+	detachedSign, _ := bugBCFSignUtil.DetachedSign(createTransferAssetResp.Result.Buffer.StringBuffer, bCFSignUtilCreateKeypair.SecretKey.StringBuffer)
 
 	//// 3.4 bugWallet.BroadcastTransferAsset()
 	req1 := broadcastTra.BroadcastTransactionParams{
@@ -42,15 +52,13 @@ func sendTransactionBiw(secret string, toAddr string, toAmount string) (bool, er
 		IsOnChain: true,
 	}
 
-	var (
-		err error
-	)
-	success, err := bugWallet.BroadcastTransferAsset(req1)
+	broadcastResult, err := bugWallet.BroadcastTransferAsset(req1)
+	success = broadcastResult.Success
 
-	return success.Success, err
+	return
 }
 
 func Test_bu(t *testing.T) {
-	success, err := sendTransactionBiw("qaq", "bEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma", "10000")
+	success, err := sendTransactionBiw(t, "ggggggggggggg", fmt.Sprintf("%sEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma", bugBCFSignUtil.Prefix), "10000")
 	log.Printf("success=%#v error=%#v", success, err)
 }

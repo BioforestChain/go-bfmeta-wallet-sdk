@@ -17,5 +17,8 @@ const { BCFWalletFactory } = require("@bfmeta/wallet-bcf");
   );
   console.log(r1, "bfchain");
 
-//   bfcwallet.sdk.api.transaction.broadcastCompleteTransaction();
+  // bfcwallet.sdk.api.transaction.broadcastCompleteTransaction();
+  // bfcwallet.sdk.api.transaction.createTransferAsset();
+  // bfcwallet.sdk.bfchainSignUtil.getAddressFromPublicKey
+  // bfcwallet.sdk.bfchainSignUtil.createKeypair
 })();
