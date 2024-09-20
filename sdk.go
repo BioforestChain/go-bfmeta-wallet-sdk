@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"bufio"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -433,29 +432,14 @@ func (util *BCFSignUtil) CreateKeypair(secret string) (keypair ResKeyPair, err e
 	}
 	return
 }
-func (util *BCFSignUtil) CreateKeypairBySecretKey(secret []byte) (keypair ResKeyPair, err error) {
+func (util *BCFSignUtil) CreateKeypairBySecretKey(secret jbase.StringBuffer) (keypair ResKeyPair, err error) {
 	script := fmt.Sprintf(`{
-		const keypair = await globalThis.signUtilMap.get(%s).createKeypairBySecretKey(Buffer.from(%q,"hex"));
+		const keypair = await globalThis.signUtilMap.get(%s).createKeypairBySecretKey(%s);
 		return {
 			secretKey:keypair.secretKey.toString("hex"),
 			publicKey:keypair.publicKey.toString("hex"),
 		}
-	}`, util.signUtilId, secret)
-	//SRC   {"secretKey":"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd","publicKey":"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
-	keypair, err = nodeExec[ResKeyPair](util.nodeProcess, script)
-	if err != nil {
-		log.Fatal("CreateKeypair err :", err)
-	}
-	return keypair, err
-}
-func (util *BCFSignUtil) CreateKeypairBySecretKeyString(secret string) (keypair ResKeyPair, err error) {
-	script := fmt.Sprintf(`{
-		const keypair = await globalThis.signUtilMap.get(%s).createKeypairBySecretKeyString(%q);
-		return {
-			secretKey:keypair.secretKey.toString("hex"),
-			publicKey:keypair.publicKey.toString("hex"),
-		}
-	}`, util.signUtilId, secret)
+	}`, util.signUtilId, secret.AsJsBuffer())
 	//SRC   {"secretKey":"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd","publicKey":"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
 	keypair, err = nodeExec[ResKeyPair](util.nodeProcess, script)
 	if err != nil {
@@ -473,17 +457,7 @@ func (util *BCFSignUtil) GetPublicKeyFromSecret(secret string) (res string, err 
 	}
 	return res, err
 }
-func (util *BCFSignUtil) GetBinaryAddressFromPublicKey(publicKey []byte) ([]byte, error) {
-	script := fmt.Sprintf(`(
-	await globalThis.signUtilMap.get(%s).getBinaryAddressFromPublicKey(Buffer.from(%q,"hex")))
-	.toString("hex")
-`, util.signUtilId, publicKey)
-	binaryAddress, _ := nodeExec[string](util.nodeProcess, script)
-	if binaryAddress == "" {
-		return nil, errors.New("publicKey is invalid")
-	}
-	return hex.DecodeString(binaryAddress)
-}
+
 func (util *BCFSignUtil) GetAddressFromPublicKey(publicKey jbase.StringBuffer, prefix string) (string, error) {
 	script := fmt.Sprintf(`(
 		await globalThis.signUtilMap.get(%s)
@@ -496,20 +470,6 @@ func (util *BCFSignUtil) GetAddressFromPublicKey(publicKey jbase.StringBuffer, p
 	return address, nil
 }
 
-// Se 03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
-// Pu caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc
-func (util *BCFSignUtil) GetAddressFromPublicKeyString(publicKey jbase.StringBuffer, prefix string) (string, error) {
-	script := fmt.Sprintf(`(
-		await globalThis.signUtilMap.get(%s)
-		.getAddressFromPublicKeyString(%s,%q)
-		)
-		`, util.signUtilId, publicKey.AsJsBuffer(), prefix)
-	address, _ := nodeExec[string](util.nodeProcess, script)
-	if address == "" {
-		return "", errors.New("publicKey is invalid")
-	}
-	return address, nil
-}
 func (util *BCFSignUtil) GetAddressFromSecret(secret string) (string, error) {
 	script := fmt.Sprintf(`(
 		await globalThis.signUtilMap.get(%s)
@@ -522,67 +482,31 @@ func (util *BCFSignUtil) GetAddressFromSecret(secret string) (string, error) {
 	}
 	return address, nil
 }
-func (util *BCFSignUtil) GetSecondPublicKeyStringFromSecretAndSecondSecret(secret, secondSecret, encode string) (string, error) {
-	var script string
-	if len(encode) > 0 {
-		script = fmt.Sprintf(`(
-		await globalThis.signUtilMap.get(%s)
-		.getSecondPublicKeyStringFromSecretAndSecondSecret(%q,%q,%q)
-)
-		.toString("hex")
-`, util.signUtilId, secret, secondSecret, encode)
-	} else {
-		script = fmt.Sprintf(`(
-		await globalThis.signUtilMap.get(%s)
-		.getSecondPublicKeyStringFromSecretAndSecondSecret(%q,%q)
-)
-		.toString("hex")
-`, util.signUtilId, secret, secondSecret)
+func (util *BCFSignUtil) GetSecondPublicKeyStringFromSecretAndSecondSecret(secret, secondSecret string) (publicKey jbase.HexStringBuffer, err error) {
+	script := fmt.Sprintf(`(
+	await globalThis.signUtilMap.get(%s)
+	.getSecondPublicKeyStringFromSecretAndSecondSecret(%q,%q)
+	)
+	`, util.signUtilId, secret, secondSecret)
+	publicKey, err = nodeExec[jbase.HexStringBuffer](util.nodeProcess, script)
+	if publicKey.Value == "" {
+		err = errors.New("secret or secondSecret or encode is invalid")
 	}
-	got, _ := nodeExec[string](util.nodeProcess, script)
-	if got == "" {
-		return "", errors.New("secret or secondSecret or encode is invalid")
-	}
-	return got, nil
+	return
 }
 
 // 根据私钥获取公钥String
-func (util *BCFSignUtil) GetSecondPublicKeyStringFromSecretAndSecondSecretV2(secret, secondSecret, encode string) (string, error) {
-	var script string
-	if len(encode) > 0 {
-		script = fmt.Sprintf(`(
-		await globalThis.signUtilMap.get(%s)
-		.getSecondPublicKeyStringFromSecretAndSecondSecretV2(%q,%q,%q)
-)
-		.toString("hex")
-`, util.signUtilId, secret, secondSecret, encode)
-	} else {
-		script = fmt.Sprintf(`(
-		await globalThis.signUtilMap.get(%s)
-		.getSecondPublicKeyStringFromSecretAndSecondSecretV2(%q,%q)
-)
-		.toString("hex")
-`, util.signUtilId, secret, secondSecret)
+func (util *BCFSignUtil) GetSecondPublicKeyFromSecretAndSecondSecretV2(secret, secondSecret string) (publicKey jbase.HexStringBuffer, err error) {
+	script := fmt.Sprintf(`(
+	await globalThis.signUtilMap.get(%s)
+	.getSecondPublicKeyStringFromSecretAndSecondSecretV2(%q,%q)
+	)
+	`, util.signUtilId, secret, secondSecret)
+	publicKey, err = nodeExec[jbase.HexStringBuffer](util.nodeProcess, script)
+	if publicKey.Value == "" {
+		err = errors.New("secret or secondSecret or encode is invalid")
 	}
-	got, _ := nodeExec[string](util.nodeProcess, script)
-	if got == "" {
-		return "", errors.New("secret or secondSecret or encode is invalid")
-	}
-	return got, nil
-}
-func (util *BCFSignUtil) GetSecondPublicKeyFromSecretAndSecondSecretV2(secret, secondSecret string) (res ResPubKeyPair, err error) {
-	script := fmt.Sprintf(`{
-		const got = await globalThis.signUtilMap.get(%s).getSecondPublicKeyFromSecretAndSecondSecretV2(%q,%q)
-		return {
-			publicKey:got.toString("hex")
-		}
-	}
-`, util.signUtilId, secret, secondSecret)
-	res, err = nodeExec[ResPubKeyPair](util.nodeProcess, script)
-	if err != nil {
-		return res, errors.New("secret or secondSecret is invalid")
-	}
-	return res, nil
+	return
 }
 func (util *BCFSignUtil) CreateSecondKeypair(secret, secondSecret string) (keypair ResKeyPair, err error) {
 	script := fmt.Sprintf(`{
@@ -592,7 +516,7 @@ func (util *BCFSignUtil) CreateSecondKeypair(secret, secondSecret string) (keypa
 			publicKey:keypair.publicKey.toString("hex"),
 		}
 	}
-`, util.signUtilId, secret, secondSecret)
+	`, util.signUtilId, secret, secondSecret)
 	keypair, err = nodeExec[ResKeyPair](util.nodeProcess, script)
 	if err != nil {
 		log.Println("CreateSecondKeypair err : ", err)
@@ -611,7 +535,7 @@ func (util *BCFSignUtil) GetSecondPublicKeyFromSecretAndSecondSecret(secret, sec
 			publicKey:got.toString("hex")
 		}
 	}
-`, util.signUtilId, secret, secondSecret)
+	`, util.signUtilId, secret, secondSecret)
 	keypair, err = nodeExec[ResPubKeyPair](util.nodeProcess, script)
 	if err != nil {
 		log.Println("GetSecondPublicKeyFromSecretAndSecondSecret err : ", err)
@@ -630,23 +554,9 @@ func (util *BCFSignUtil) DetachedSign(msg, secretKey jbase.StringBuffer) (signat
 	script := fmt.Sprintf(`{
 		const got = await globalThis.signUtilMap.get(%s).detachedSign(%s,%s);
 		return got.toString("hex");
-}
-`, util.signUtilId, msg.AsJsBuffer(), secretKey.AsJsBuffer())
-	signature, err = nodeExec[jbase.HexStringBuffer](util.nodeProcess, script)
-	return
-}
-
-// 签名并且转成 hex 字符串 dd32b50516cfef985d629bab795b63f66fdcb37f0d267e730db113bcc08d9c3cc90a589080c703f9e7181105276410ee18c9c4d74b311f1ae095716305afdf07
-func (util *BCFSignUtil) SignToString(msg, secretKey jbase.StringBuffer) (signature jbase.HexStringBuffer, err error) {
-	script := fmt.Sprintf(`(
-		await globalThis.signUtilMap.get(%s)
-		.signToString(Buffer.from(%q),Buffer.from(%q,"hex"))
-)
-`, util.signUtilId, msg, secretKey)
-	signature, err = nodeExec[jbase.HexStringBuffer](util.nodeProcess, script)
-	if signature.Value == "" {
-		err = errors.New("msg or secretKey is invalid")
 	}
+	`, util.signUtilId, msg.AsJsBuffer(), secretKey.AsJsBuffer())
+	signature, err = nodeExec[jbase.HexStringBuffer](util.nodeProcess, script)
 	return
 }
 
@@ -660,18 +570,15 @@ func (util *BCFSignUtil) SignToString(msg, secretKey jbase.StringBuffer) (signat
 //     */
 //
 // detachedVeriy(message: Uint8Array, signatureBuffer: Uint8Array, publicKeyBuffer: Uint8Array): Promise<boolean>;
-func (util *BCFSignUtil) DetachedVeriy(message, signature, publicKey jbase.StringBuffer) (res bool, err error) {
+func (util *BCFSignUtil) DetachedVerify(message, signature, publicKey jbase.StringBuffer) (verified bool, err error) {
 	script := fmt.Sprintf(`(
 		await globalThis.signUtilMap.get(%s)
-		.detachedVeriy(%q,%q,%q)
-)
-`, util.signUtilId, message, signature, publicKey)
-	log.Printf("script=%s", script)
-	res, err = nodeExec[bool](util.nodeProcess, script)
-	if res == false {
-		return res, errors.New("msg or secretKey is invalid")
-	}
-	return res, nil
+		.detachedVeriy(%s,%s,%s)
+	)
+	`, util.signUtilId, message.AsJsBuffer(), signature.AsJsBuffer(), publicKey.AsJsBuffer())
+	// log.Printf("script=%s", script)
+	verified, err = nodeExec[bool](util.nodeProcess, script)
+	return
 }
 
 /**

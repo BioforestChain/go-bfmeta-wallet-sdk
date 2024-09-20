@@ -1,7 +1,6 @@
 package sdk_test
 
 import (
-	"encoding/hex"
 	"log"
 	"testing"
 	"time"
@@ -43,7 +42,7 @@ func TestSdk(t *testing.T) {
 
 	//getAccountInfo
 	accountInfoReq := account.GetAccountInfoParams{
-		"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
+		Address: "cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
 	}
 	accountInfo := wallet.GetAccountInfo(accountInfoReq)
 	//accountInfo= accountResp.GetAccountInfoRespResult{Success:true, Result:accountResp.GetAccountInfoResp{Address:"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma", PublicKey:"4bda2c5366b10e709c560e846e4041d355446c910dd6238e418092af5736c227", SecondPublicK
@@ -72,7 +71,7 @@ func TestSdk(t *testing.T) {
 func TestSdkAsset(t *testing.T) {
 	//getAccountAsset
 	accountAssetReq := accountAssetEntityReq.GetAccountAssetParams{
-		"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
+		Address: "cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma",
 	}
 	accountAsset := wallet.GetAccountAsset(accountAssetReq)
 	//accountAssetResp.GetAccountAssetRespResult{Success:true, Result:accountAssetResp.GetAccountAssetResp{Address:"cEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma", Assets:accountAssetResp.AssetsMap{"XXVXQ":map[string]accountAssetResp.AssetDetail{"PMC":accountAssetResp.AssetDetail{Sour
@@ -270,30 +269,15 @@ func TestPackageTransferAsset(t *testing.T) {
 }
 
 func TestBCFSignUtil_CreateKeypairBySecretKey(t *testing.T) {
-	bCFSignUtil_CreateKeypairBySecretKey, _ := bCFSignUtil.CreateKeypairBySecretKey([]byte("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"))
+	bCFSignUtil_CreateKeypairBySecretKey, _ := bCFSignUtil.CreateKeypairBySecretKey(jbase.NewHexStringBuffer("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd").StringBuffer)
 	//bCFSignUtil_CreateKeypair= sdk.ResKeyPair{SecretKey:"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd", PublicKey:"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
 	//--- PASS: TestBCFSignUtil_CreateKeypairBySecretKey (0.01s)
 	log.Printf("bCFSignUtil_CreateKeypairBySecretKey= %#v\n", bCFSignUtil_CreateKeypairBySecretKey)
 }
-
-func TestBCFSignUtil_CreateKeypairBySecretKeyString(t *testing.T) {
-	got, _ := bCFSignUtil.CreateKeypairBySecretKeyString("a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd")
-	//bCFSignUtil_CreateKeypairBySecretKeyString= sdk.ResKeyPair{SecretKey:"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd", PublicKey:"a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"}
-	log.Printf("bCFSignUtil_CreateKeypairBySecretKeyString= %#v\n", got)
-}
-
 func TestBCFSignUtil_GetPublicKeyFromSecret(t *testing.T) {
 	bCFSignUtil_GetPublicKeyFromSecret, _ := bCFSignUtil.GetPublicKeyFromSecret("123456")
 	//bCFSignUtil_GetPublicKeyFromSecret= "0363649faf7a83d0bc0d9faa9c6a5efa8adc772190b8072210bc825895ca3570"
 	log.Printf("bCFSignUtil_GetPublicKeyFromSecret= %#v\n", bCFSignUtil_GetPublicKeyFromSecret)
-}
-
-// 根据公钥（Uint8Array）生成地址的二进制数据
-func TestBCFSignUtil_GetBinaryAddressFromPublicKey(t *testing.T) {
-	var puk = "a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
-	got, _ := bCFSignUtil.GetBinaryAddressFromPublicKey([]byte(puk))
-	log.Printf("BinaryAddressFromPublicKey= %#v\n", got)
-	log.Printf("BinaryAddressFromPublicKey string = %#v\n", hex.EncodeToString(got))
 }
 
 func TestBCFSignUtil_CreateSecondKeypair(t *testing.T) {
@@ -315,21 +299,10 @@ func TestBCFSignUtil_GetSecondPublicKeyFromSecretAndSecondSecret(t *testing.T) {
 func TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecret(t *testing.T) {
 	var s = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
 	var ss = "12345678"
-	var encode = "" //非必传
-	got, _ := bCFSignUtil.GetSecondPublicKeyStringFromSecretAndSecondSecret(s, ss, encode)
+	got, _ := bCFSignUtil.GetSecondPublicKeyStringFromSecretAndSecondSecret(s, ss)
 	//GetSecondPublicKeyFromSecretAndSecondSecret= "bb3d939c1d91e95154c8ec5683e981865e0baa3cbaa25bd382f1bde5b693306d"
 	//--- PASS: TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecret (0.02s)
 	log.Printf("GetSecondPublicKeyFromSecretAndSecondSecret= %#v\n", got)
-}
-
-func TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecretV2(t *testing.T) {
-	var s = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd"
-	var ss = "12345678"
-	var encode = "" //非必传
-	got, _ := bCFSignUtil.GetSecondPublicKeyStringFromSecretAndSecondSecretV2(s, ss, encode)
-	//GetSecondPublicKeyStringFromSecretAndSecondSecretV2= "1bc79b077e3476354f845cf3879a1d9a6e3254f9866450ec5d6c00c83268319e"
-	//--- PASS: TestBCFSignUtil_GetSecondPublicKeyStringFromSecretAndSecondSecretV2 (0.02s)
-	log.Printf("GetSecondPublicKeyStringFromSecretAndSecondSecretV2= %#v\n", got)
 }
 
 func TestBCFSignUtil_AsymmetricEncrypt(t *testing.T) {
@@ -392,7 +365,7 @@ func TestBCFSignUtil_GetSecondPublicKeyFromSecretAndSecondSecretV2(t *testing.T)
 	var ss = "12345678"
 	got, _ := bCFSignUtil.GetSecondPublicKeyFromSecretAndSecondSecretV2(s, ss)
 	//GetSecondPublicKeyFromSecretAndSecondSecretV2= sdk.ResPubKeyPair{PublicKey:"1bc79b077e3476354f845cf3879a1d9a6e3254f9866450ec5d6c00c83268319e"}
-	log.Printf("GetSecondPublicKeyFromSecretAndSecondSecretV2= %#v\n", got.PublicKey)
+	log.Printf("GetSecondPublicKeyFromSecretAndSecondSecretV2= %#v\n", got)
 }
 
 func TestMultiSdk(t *testing.T) {
@@ -410,6 +383,6 @@ func _singleSdk(t *testing.T) {
 	defer sdkClient.Close()
 
 	var signature, _ = bCFSignUtil.DetachedSign(Msg.StringBuffer, SecretKey.StringBuffer)
-	got, _ := bCFSignUtil.DetachedVeriy(Msg.StringBuffer, signature.StringBuffer, PubKey.StringBuffer)
+	got, _ := bCFSignUtil.DetachedVerify(Msg.StringBuffer, signature.StringBuffer, PubKey.StringBuffer)
 	log.Printf("DetachedVeriy= %#v\n", got)
 }
