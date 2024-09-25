@@ -2,6 +2,8 @@ package sdk
 
 import (
 	"bufio"
+	"bytes"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -92,10 +94,10 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 				if err == io.EOF {
 					break
 				}
+				fmt.Println(name+" read line error:", err)
 				if strings.Contains(err.Error(), "file already closed") {
 					break
 				}
-				fmt.Println(name+" read line error:", err)
 				continue
 			}
 			if debug {
@@ -141,6 +143,9 @@ type BCFWalletSDK struct {
 	nodeProcess *NodeProcess
 }
 
+func (sdk *BCFWalletSDK) SetDebug(debug bool) {
+	sdk.debug = debug
+}
 func (sdk *BCFWalletSDK) Close() error {
 	err := sdk.nodeProcess.Cmd.Process.Kill()
 	sdk.nodeProcess.Stdout.Close()
@@ -156,15 +161,32 @@ func NewLocalBCFWalletSDK(debug bool) BCFWalletSDK {
 func NewBCFWalletSDK() BCFWalletSDK {
 	var try = 0
 	var repl string
+
+	packageJson := readPackageJson()
+	name := packageJson["name"].(string)
+	version := packageJson["version"].(string)
+	log.Printf("require %s@%s", name, version)
+
 	for try < 3 {
 		var err error
-		repl, err = exec.LookPath("bfcwallet-node-go-repl")
+		repl, err = exec.LookPath(name)
 		if errors.Is(err, exec.ErrDot) {
 			err = nil
 		}
+		if err == nil {
+			cmd := exec.Command(name, "--version")
+			var out bytes.Buffer
+			cmd.Stdout = &out
+			err = cmd.Run()
+			if err == nil {
+				if !strings.Contains(out.String(), (name + " " + version)) {
+					err = fmt.Errorf("locale %s need upgrade to v%s", out.String(), version)
+				}
+			}
+		}
 		if err != nil {
-			fmt.Println("installing bfcwallet-node-go-repl...")
-			install := exec.Command("npm", "i", "-g", "bfcwallet-node-go-repl")
+			fmt.Printf("installing %s@%s...", name, version)
+			install := exec.Command("npm", "i", "-g", name+"@"+version)
 			err = install.Run()
 			if err != nil {
 				log.Fatal(err)
@@ -175,6 +197,19 @@ func NewBCFWalletSDK() BCFWalletSDK {
 	}
 	nodeProcess := newNodeProcess(repl, []string{}, false)
 	return BCFWalletSDK{nodeProcess: nodeProcess}
+}
+
+//go:embed package.json
+var packageJsonData []byte
+
+func readPackageJson() (result map[string]interface{}) {
+	// 映射JSON数据
+	err := json.Unmarshal(packageJsonData, &result)
+	if err != nil {
+		log.Fatal("fail to parse package.json")
+		panic(err)
+	}
+	return
 }
 
 var reqIdAcc = 0
@@ -211,21 +246,6 @@ func (sdk *BCFWalletSDK) NewBCFWallet(ip string, port int, browserPath string) *
 		globalThis.bfcwalletIdAcc ??= 0
 		const id = globalThis.bfcwalletIdAcc++
 		const bfcwallet = walletBcf.BCFWalletFactory({
-			enable: true,
-            host: [{ ip: "`+ip+`", port: `+strconv.Itoa(port)+` }],
-            browserPath: "`+browserPath+`",
-        });
-		bfcwalletMap.set(id, bfcwallet)
-		return id;
-	}`)
-	return &BCFWallet{nodeProcess: sdk.nodeProcess, walletId: strconv.Itoa(bfcWalletId)}
-}
-func (sdk *BCFWalletSDK) NewBCFWalletSignUtil(ip string, port int, browserPath string) *BCFWallet {
-	bfcWalletId, _ := nodeExec[int](sdk.nodeProcess, `{
-		const bfcwalletMap = (globalThis.bfcwalletMap??=new Map());
-		globalThis.bfcwalletIdAcc ??= 0
-		const id = globalThis.bfcwalletIdAcc++
-		const bfcwallet = bfmetaSignUtil.BCFWalletFactory({
 			enable: true,
             host: [{ ip: "`+ip+`", port: `+strconv.Itoa(port)+` }],
             browserPath: "`+browserPath+`",
