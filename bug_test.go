@@ -5,19 +5,34 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"time"
 
 	sdk "github.com/BioforestChain/go-bfmeta-wallet-sdk"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/broadcastTra"
 	"github.com/BioforestChain/go-bfmeta-wallet-sdk/entity/req/createTransferAsset"
 )
 
-var bugSdkClient = sdk.NewLocalBCFWalletSDK(true)
+var bugSdkClient sdk.BCFWalletSDK
+var bugBCFSignUtil *sdk.BCFSignUtil
+var bugWallet *sdk.BCFWallet
 
-var bugBCFSignUtil = bugSdkClient.NewBCFSignUtil("b")
-var bugWallet = bugSdkClient.NewBCFWallet("35.213.66.234", 30003, "https://tracker.biw-meta.info/browser")
+func prepareSdk() bool {
+	bugSdkClient = sdk.NewLocalBCFWalletSDK(false)
 
-// var bugBCFSignUtil = bugSdkClient.NewBCFSignUtil("c")
-// var bugWallet = bugSdkClient.NewBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
+	// bugBCFSignUtil = bugSdkClient.NewBCFSignUtil("b")
+	// bugWallet = bugSdkClient.NewBCFWallet("35.213.66.234", 30003, "https://tracker.biw-meta.info/browser")
+
+	bugBCFSignUtil = bugSdkClient.NewBCFSignUtil("c")
+	bugWallet = bugSdkClient.NewBCFWallet("34.84.178.63", 19503, "https://qapmapi.pmchainbox.com/browser")
+	bugSdkClient.SetOnClose(func() {
+		log.Println("QAQ restart sdk")
+		prepareSdk()
+		log.Println("QAQ restart done")
+	})
+	return true
+}
+
+var _ = prepareSdk()
 
 func sendTransactionBiw(t *testing.T, secret string, toAddr string, toAmount string) (success bool, err error) {
 	bCFSignUtilCreateKeypair, _ := bugBCFSignUtil.CreateKeypair(secret)
@@ -28,6 +43,9 @@ func sendTransactionBiw(t *testing.T, secret string, toAddr string, toAmount str
 				PublicKey:        bCFSignUtilCreateKeypair.PublicKey,
 				Fee:              "5000",
 				ApplyBlockHeight: bugWallet.GetLastBlock().Result.Height,
+				Remark: map[string]string{
+					"time": time.Now().UTC().Local().String(),
+				},
 			},
 			RecipientId: toAddr, //钱包地址
 		},
@@ -59,6 +77,19 @@ func sendTransactionBiw(t *testing.T, secret string, toAddr string, toAmount str
 }
 
 func Test_bu(t *testing.T) {
-	success, err := sendTransactionBiw(t, "ggggggggggggg", fmt.Sprintf("%sEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma", bugBCFSignUtil.Prefix), "10000")
-	log.Printf("success=%#v error=%#v", success, err)
+	// time.Sleep(5 * time.Second)
+	for i := 0; i < 20; i++ {
+		qaq := func() {
+			time.Sleep(time.Duration(i) * time.Microsecond)
+			log.Printf("QAQ start sendTransactionBiw(%d)", i)
+			success, err := sendTransactionBiw(t, "scan pass carpet coral pumpkin spell present decrease veteran text flower pioneer top speak jaguar wreck ask always hazard good know gift uncle frost", fmt.Sprintf("%sEAXDkaEJgWKMM61KYz2dYU1RfuxbB8Ma", bugBCFSignUtil.Prefix), "10000")
+			log.Printf("QAQ end sendTransactionBiw(%d) success=%#v error=%#v", i, success, err)
+		}
+		if i < 1 {
+			qaq()
+		} else {
+			go qaq()
+		}
+	}
+	time.Sleep(10 * time.Second)
 }

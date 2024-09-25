@@ -56,10 +56,14 @@ type NodeProcess struct {
 	Stdin      io.WriteCloser
 	Stdout     io.ReadCloser
 	Stderr     io.ReadCloser
-	//NodeExec    func()
+	OnClose    OnNodeProcessClose
+	IsClosed   bool
+	execLock   sync.Mutex // 互斥锁
 }
 
-func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
+type OnNodeProcessClose func()
+
+func newNodeProcess(cmd string, args []string, debug bool, onclose OnNodeProcessClose) *NodeProcess {
 	command := exec.Command(cmd, args...)
 	stdin, err := command.StdinPipe()
 	if err != nil {
@@ -82,7 +86,7 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 	}
 	err = nodeProcess.Cmd.Start()
 	if err != nil {
-		fmt.Println("Failed to start process:", err)
+		log.Fatalf("Failed to start process: %v", err)
 		panic(err)
 	}
 	// 在一个goroutine中读取stdout
@@ -94,14 +98,14 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 				if err == io.EOF {
 					break
 				}
-				fmt.Println(name+" read line error:", err)
+				log.Println(name+" read line error:", err)
 				if strings.Contains(err.Error(), "file already closed") {
 					break
 				}
 				continue
 			}
 			if debug {
-				fmt.Printf("line: %v\n", line)
+				log.Printf("line: %v\n", line)
 			}
 			parts := strings.SplitN(line, "Result ", 2)
 			if len(parts) == 2 {
@@ -110,7 +114,7 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 				result := parts[1]
 				idIndex := strings.Index(result, " ")
 				if idIndex == -1 {
-					fmt.Println(name+" Invalid line format:", line)
+					log.Println(name+" Invalid line format:", line)
 					continue
 				}
 				reqIDStr := result[0:idIndex]
@@ -118,7 +122,7 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 				// 将req_id转换为整数
 				reqID, err := strconv.Atoi(reqIDStr)
 				if err != nil {
-					fmt.Println(name+" Invalid req_id:", reqIDStr)
+					log.Println(name+" Invalid req_id:", reqIDStr)
 					continue
 				}
 				// 从map中获取并移除通道
@@ -127,11 +131,15 @@ func newNodeProcess(cmd string, args []string, debug bool) *NodeProcess {
 					// 向通道发送结果
 					channel <- Result{Code: resultCode, Message: resultData}
 				} else {
-					fmt.Println(name+" Channel not found for req_id:", reqID)
+					log.Println(name+" Channel not found for req_id:", reqID)
 				}
 			}
 		}
-		fmt.Println("node-process end")
+		log.Printf("node-process stdio %d end", resultCode)
+		if resultCode == 1 {
+			nodeProcess.IsClosed = true
+			nodeProcess.OnClose()
+		}
 	}
 	go readLines("stdout", nodeProcess.Stdout, 1)
 	go readLines("stderr", nodeProcess.Stderr, 0)
@@ -146,6 +154,12 @@ type BCFWalletSDK struct {
 func (sdk *BCFWalletSDK) SetDebug(debug bool) {
 	sdk.debug = debug
 }
+func (sdk *BCFWalletSDK) SetOnClose(onclose OnNodeProcessClose) {
+	sdk.nodeProcess.OnClose = onclose
+}
+func (sdk *BCFWalletSDK) GetIsClosed() bool {
+	return sdk.nodeProcess.IsClosed
+}
 func (sdk *BCFWalletSDK) Close() error {
 	err := sdk.nodeProcess.Cmd.Process.Kill()
 	sdk.nodeProcess.Stdout.Close()
@@ -155,7 +169,8 @@ func (sdk *BCFWalletSDK) Close() error {
 }
 func NewLocalBCFWalletSDK(debug bool) BCFWalletSDK {
 	// 启动Node.js进程
-	nodeProcess := newNodeProcess("node", []string{"--no-warnings", "./sdk.js"}, debug)
+	// onclose ON= func() {}
+	nodeProcess := newNodeProcess("node", []string{"--no-warnings", "./sdk.js"}, debug, func() {})
 	return BCFWalletSDK{nodeProcess: nodeProcess}
 }
 func NewBCFWalletSDK() BCFWalletSDK {
@@ -195,7 +210,7 @@ func NewBCFWalletSDK() BCFWalletSDK {
 		}
 		break
 	}
-	nodeProcess := newNodeProcess(repl, []string{}, false)
+	nodeProcess := newNodeProcess(repl, []string{}, false, func() {})
 	return BCFWalletSDK{nodeProcess: nodeProcess}
 }
 
@@ -215,6 +230,8 @@ func readPackageJson() (result map[string]interface{}) {
 var reqIdAcc = 0
 
 func nodeExec[T any](nodeProcess *NodeProcess, jsCode string) (T, error) {
+	nodeProcess.execLock.Lock()
+	defer nodeProcess.execLock.Unlock()
 	var res T
 	reqIdAcc += 1
 	req_id := reqIdAcc
