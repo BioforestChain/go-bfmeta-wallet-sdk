@@ -109,7 +109,7 @@ func newNodeProcess(cmd string, args []string, debug bool, onclose OnNodeProcess
 			}
 			parts := strings.SplitN(line, "Result ", 2)
 			if len(parts) == 2 {
-				//fmt.Printf("node: %v\n", parts[1])
+				// fmt.Printf("node: %v\n", parts[1])
 				// 解析行并提取req_id和json_result
 				result := parts[1]
 				idIndex := strings.Index(result, " ")
@@ -125,11 +125,24 @@ func newNodeProcess(cmd string, args []string, debug bool, onclose OnNodeProcess
 					log.Println(name+" Invalid req_id:", reqIDStr)
 					continue
 				}
+				successIndex := strings.Index(resultData, " ")
+				if successIndex == -1 {
+					log.Println(name+" Invalid line format:", line)
+					continue
+				}
+				successStr := resultData[0:successIndex]
+				messageStr := resultData[successIndex+1:]
+				var Code int
+				if successStr == "true" {
+					Code = 1
+				} else {
+					Code = 0
+				}
 				// 从map中获取并移除通道
 				if ch, ok := nodeProcess.ChannelMap.LoadAndDelete(reqID); ok {
 					channel := ch.(chan Result)
 					// 向通道发送结果
-					channel <- Result{Code: resultCode, Message: resultData}
+					channel <- Result{Code: Code, Message: messageStr}
 				} else {
 					log.Println(name+" Channel not found for req_id:", reqID)
 				}
@@ -238,12 +251,13 @@ func nodeExec[T any](nodeProcess *NodeProcess, jsCode string) (T, error) {
 	channel := make(chan Result)
 	nodeProcess.ChannelMap.Store(req_id, channel)
 	var evalCode = fmt.Sprintf("await returnToGo(%d, async()=>%v)\r\n\n", req_id, jsCode)
-	//fmt.Println("evalCode", evalCode)
+	// fmt.Println("evalCode", evalCode)
 	_, err := nodeProcess.Stdin.Write([]byte(evalCode))
 	if err != nil {
 		return res, err
 	}
 	result := <-channel
+	// fmt.Println("evalResult", result)
 	if result.Code == 1 {
 		err := json.Unmarshal([]byte(result.Message), &res)
 		return res, err

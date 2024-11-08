@@ -1,6 +1,6 @@
 {
   "name": "bfcwallet-node-go-repl",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "",
   "bin": "sdk.js",
   "keywords": [],

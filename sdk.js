@@ -45,9 +45,9 @@ async function returnToGo(req_id, handler) {
     console.log("node env ready", process.versions.node);
     try {
         const result = await handler();
-        return `Result ${req_id} ${JSON.stringify(result)}`;
+        return `Result ${req_id} true ${JSON.stringify(result)}`;
     } catch (e) {
-        return `Result ${req_id} ${String(e)}`;
+        return `Result ${req_id} false ${String(e)}`;
     }
 }
 
