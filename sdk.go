@@ -135,11 +135,17 @@ func newNodeProcess(cmd string, args []string, debug bool, onclose OnNodeProcess
 				var Code int
 				if successStr == "true" {
 					Code = 1
-				} else {
+				} else if successStr == "false" {
 					Code = 0
+				} else {
+					continue
 				}
 				// 从map中获取并移除通道
 				if ch, ok := nodeProcess.ChannelMap.LoadAndDelete(reqID); ok {
+					if ch == nil {
+						log.Println(name+" Channel is null for req_id:", reqID)
+						continue
+					}
 					channel := ch.(chan Result)
 					// 向通道发送结果
 					channel <- Result{Code: Code, Message: messageStr}
